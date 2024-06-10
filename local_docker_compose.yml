@@ -1,0 +1,41 @@
+version: '1.0'
+
+services:
+  light_messages_backend:
+    build:
+      context: .
+      dockerfile: ./docker/local/django/Dockerfile
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    ports:
+      - "8000:8000"
+    env_file:
+      - .envs/local/.django.env
+      - .envs/local/.postgresql.env
+    depends_on:
+      - postgres
+    command: /start.sh
+    networks:
+      - backend
+
+  postgres:
+    image: postgres:16.2-bookworm
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - .envs/local/.postgresql.env
+    networks:
+      - backend
+
+
+networks:
+  backend:
+    driver: bridge
+
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
