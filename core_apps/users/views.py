@@ -4,9 +4,11 @@ from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from core_apps.users.serializers import UserRegistrationSerializer
 
+
 class UserRegistrationView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
+
     def post(self, request, *args, **kwargs):
         serializer = UserRegistrationSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
