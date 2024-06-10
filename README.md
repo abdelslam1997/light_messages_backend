@@ -1,2 +1,3 @@
 # light_messages_backend
-Light Messages 
+
+Python Version: 3.12.3
