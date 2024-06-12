@@ -32,4 +32,5 @@ urlpatterns = [
     path("api/v1/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("api/v1/token/verify/", TokenVerifyView.as_view(), name="token_verify"),
     path("api/v1/users/", include("core_apps.users.urls")),
+    path("api/v1/messages/", include("core_apps.messenger.urls")),
 ]
