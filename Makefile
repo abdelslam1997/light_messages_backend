@@ -1,26 +1,41 @@
+DOCKER_COMPOSE = docker compose -f local_docker_compose.yml
+SERVICE = light_messages_backend
+path = .
+
 build:
-	docker compose -f local_docker_compose.yml build
+	$(DOCKER_COMPOSE) build
 
 up:
-	docker compose -f local_docker_compose.yml up -d
+	$(DOCKER_COMPOSE) up -d
 
 down:
-	docker compose -f local_docker_compose.yml down
+	$(DOCKER_COMPOSE) down
+
+logs:
+	$(DOCKER_COMPOSE) logs -f
 
 terminal:
-	docker compose -f local_docker_compose.yml exec light_messages_backend bash
+	$(DOCKER_COMPOSE) exec $(SERVICE) bash
+
+create-superuser:
+	$(DOCKER_COMPOSE) run --rm $(SERVICE) python manage.py createsuperuser
 
 makemigrations:
-	docker compose -f local_docker_compose.yml run --rm light_messages_backend python manage.py makemigrations
+	$(DOCKER_COMPOSE) run --rm $(SERVICE) python manage.py makemigrations
 
 migrate:
-	docker compose -f local_docker_compose.yml run --rm light_messages_backend python manage.py migrate
+	$(DOCKER_COMPOSE) run --rm $(SERVICE) python manage.py migrate
 
 pytest:
-	docker compose -f local_docker_compose.yml run --rm light_messages_backend pytest -p no:warnings --cov=. -v
+	$(DOCKER_COMPOSE) run --rm $(SERVICE) pytest -p no:warnings --cov=. -v $(path)
 
 pytest-print:
-	docker compose -f local_docker_compose.yml run --rm light_messages_backend pytest -s -p no:warnings --cov=. -v
+	$(DOCKER_COMPOSE) run --rm $(SERVICE) pytest -s -p no:warnings --cov=. -v $(path)
 
 pytest-html:
-	docker compose -f local_docker_compose.yml run --rm light_messages_backend pytest -p no:warnings --cov=. --cov-report html
+	$(DOCKER_COMPOSE) run --rm $(SERVICE) pytest -p no:warnings --cov=. --cov-report html $(path)
+
+# Example usage:
+# make pytest path=tests/test_file.py
+# make pytest-print path=tests/test_file.py
+# make pytest-html path=tests/test_file.py
