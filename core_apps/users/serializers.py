@@ -1,4 +1,5 @@
-from rest_framework.serializers import ModelSerializer, CharField, ValidationError
+from rest_framework.serializers import ModelSerializer, CharField, ValidationError, SerializerMethodField
+
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 
@@ -8,10 +9,18 @@ User = get_user_model()
 
 
 class UserSerializer(ModelSerializer):
+    profile_image = SerializerMethodField()
     class Meta:
         model = User
-        fields = ("id", "email", "first_name", "last_name", "date_joined")
+        fields = ("id", "email", "first_name", "last_name", "date_joined", "profile_image")
         read_only_fields = ("id", "email", "date_joined")
+
+    def get_profile_image(self, obj):
+        ''' Build the absloute profile image URL '''
+        request = self.context.get("request")
+        if request and obj.profile_image and hasattr(obj.profile_image, "url"):
+            return request.build_absolute_uri(obj.profile_image.url)
+        return None
 
 
 class UserRegistrationSerializer(ModelSerializer):
