@@ -6,6 +6,7 @@ from rest_framework.pagination import PageNumberPagination
 
 from django.db.models import Q, Max, F, Case, When, IntegerField, Count, OuterRef, Subquery, CharField
 from django.contrib.auth import get_user_model
+from django.conf import settings
 
 from .models import Message
 from .serializers import MessageSerializer, ChatSummarySerializer, MessageDetailSerializer
@@ -61,6 +62,9 @@ class MessageListCreateView(generics.ListCreateAPIView):
             "timestamp",
         )
 
+        ## Query for unread message in each user_id
+        
+
         '''
         # Uncomment this snippet if you want to see actual SQL query
             print(annotated_messages.query)
@@ -72,13 +76,19 @@ class MessageListCreateView(generics.ListCreateAPIView):
         chat_data = []
 
         for chat in result:
+            chat['other_user_profile_image'] = request.build_absolute_uri(settings.MEDIA_URL + chat['other_user_profile_image'])
             chat_data.append({
                 'user_id': chat['other_user_id'],
                 'first_name': chat['other_user_name'],
                 "profile_image": chat['other_user_profile_image'],
                 'last_message': chat['message'],
                 'timestamp': chat['timestamp'],
-                'unread_count': 0,
+                # TODO: Update Later to boost the performance
+                'unread_count': Message.objects.filter(
+                    receiver=user,
+                    sender_id=chat['other_user_id'],
+                    read=False
+                ).count()
             })
 
 
