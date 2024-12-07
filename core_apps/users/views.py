@@ -23,3 +23,12 @@ class UserRegistrationView(APIView):
         
         serializer = UserSerializer(request.user, context={"request": request})
         return Response(serializer.data)
+
+
+class UserListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        users = User.objects.all().exclude(id=request.user.id)
+        serializer = UserSerializer(users, many=True, context={"request": request})
+        return Response(serializer.data)
