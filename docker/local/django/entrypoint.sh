@@ -5,15 +5,16 @@ check_postgres() {
 python << END
 import sys
 import psycopg2
+import os
 from psycopg2 import OperationalError
 
 try:
     conn = psycopg2.connect(
-        dbname="yourdbname",
-        user="$POSTGRES_USER",
-        password="yourdbpassword",
-        host="$POSTGRES_HOST",
-        port="$POSTGRES_PORT",
+        dbname="${POSTGRES_DB}",
+        user="${POSTGRES_USER}",
+        password="${POSTGRES_PASSWORD}",
+        host="${POSTGRES_HOST}",
+        port="${POSTGRES_PORT}",
     )
     conn.close()
 except (OperationalError, psycopg2.Error) as e:
@@ -23,13 +24,11 @@ sys.exit(0)
 END
 }
 
-# Wait for PostgreSQL to be available
-# until check_postgres; do
-#   echo "Waiting for database connection..."
-#   sleep 1
-# done
+# Uncomment the wait loop for database
+until check_postgres; do
+  echo "Waiting for database connection..."
+  sleep 2
+done
 
 echo "Database is up - continuing..."
-
-# Execute the command passed to the entrypoint
 exec "$@"

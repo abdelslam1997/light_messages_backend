@@ -5,3 +5,6 @@ pillow==10.3.0
 psycopg2==2.9.9
 python-environ==0.4.54
 django-cors-headers==4.6.0
+daphne==4.1.2
+channels[daphne]==4.2.0
+channels-redis==4.2.1

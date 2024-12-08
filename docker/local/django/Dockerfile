@@ -1,50 +1,59 @@
-
-### Define Base Image
+### Build Stage ###
 ARG PYTHON_VERSION=3.12.3-slim-bookworm
-FROM python:${PYTHON_VERSION} as python-base-image
+FROM python:${PYTHON_VERSION} as builder
 
-## 1. Build Stage
-FROM python-base-image as build-stage
-WORKDIR /app
+# Set working directory for build stage
+WORKDIR /build
 
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+# Prevent Python from writing pyc files and ensure Python output is sent straight to terminal
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
+# Install system build dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential \
-    libpq-dev &&\
-    rm -rf /var/lib/apt/lists/*
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
 
+# Install Python dependencies
 COPY ./requirements ./requirements
-RUN pip wheel --no-cache-dir --no-deps --wheel-dir \
-    /app/wheels -r ./requirements/local.txt
+ARG ENVIRONMENT=local
+RUN pip wheel --no-cache-dir --no-deps --wheel-dir /build/wheels -r ./requirements/${ENVIRONMENT}.txt
 
+### Final Stage ###
+FROM python:${PYTHON_VERSION}
 
-## 2. Run Stage
-FROM python-base-image as run-stage
-
+# Set working directory for the application
 WORKDIR /app
 
-COPY --from=build-stage /app/wheels /wheels
-COPY --from=build-stage /app/requirements/local.txt .
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
-RUN apt-get update && apt-get install --no-install-recommends -y \
+# Install runtime dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
     libpq-dev \
-    gettext &&\
-    rm -rf /var/lib/apt/lists/*
+    gettext \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy wheels from builder stage and install
+COPY --from=builder /build/wheels /wheels
+RUN pip install --no-cache-dir /wheels/* \
+    && rm -rf /wheels
+
+# Copy and prepare entry point scripts
+ARG ENVIRONMENT=local
+COPY ./docker/${ENVIRONMENT}/django/entrypoint.sh /entrypoint.sh
+COPY ./docker/${ENVIRONMENT}/django/start.sh /start.sh
+
+# Fix line endings and make scripts executable
+RUN sed -i 's/\r$//g' /entrypoint.sh \
+    && sed -i 's/\r$//g' /start.sh \
+    && chmod +x /entrypoint.sh \
+    && chmod +x /start.sh
 
 
-RUN pip install --no-cache /wheels/* && \
-    rm -rf /wheels
-
-COPY ./docker/local/django/entrypoint.sh /entrypoint.sh
-RUN sed -i 's/\r$//g' /entrypoint.sh && \
-    chmod +x /entrypoint.sh
-
-COPY ./docker/local/django/start.sh /start.sh
-RUN sed -i 's/\r$//g' /start.sh && \
-chmod +x /start.sh
-
-# ENTRYPOINT: The command that is run when the container starts
+# Set the entry point
 ENTRYPOINT ["/entrypoint.sh"]

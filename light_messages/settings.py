@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+import os
 
 from environ import Env
 
@@ -43,6 +44,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "corsheaders",
+    "channels",
     "rest_framework",
     "rest_framework_simplejwt",
     "core_apps.users", 
@@ -78,7 +80,19 @@ TEMPLATES = [
     },
 ]
 
+ASGI_APPLICATION = "light_messages.asgi.application"
 WSGI_APPLICATION = "light_messages.wsgi.application"
+
+# Channels
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            # This matches the service name in docker-compose
+            "hosts": [(env.str('REDIS_HOST'), env.int('REDIS_PORT'))],
+        },
+    },
+}
 
 
 # Database
@@ -151,11 +165,16 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = []  # Add this line if you have additional static directories
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+# Ensure these directories are created and writable
+# os.makedirs(STATIC_ROOT, exist_ok=True)
+# os.makedirs(MEDIA_ROOT, exist_ok=True)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field

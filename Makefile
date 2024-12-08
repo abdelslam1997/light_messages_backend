@@ -5,6 +5,9 @@ path = .
 build:
 	$(DOCKER_COMPOSE) build
 
+build-no-cache:
+	$(DOCKER_COMPOSE) build --no-cache
+
 up:
 	$(DOCKER_COMPOSE) up -d
 

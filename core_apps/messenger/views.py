@@ -8,6 +8,9 @@ from django.db.models import Q, Max, F, Case, When, IntegerField, Count, OuterRe
 from django.contrib.auth import get_user_model
 from django.conf import settings
 
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
 from .models import Message
 from .serializers import MessageSerializer, ChatSummarySerializer, MessageDetailSerializer
 
@@ -100,11 +103,30 @@ class MessageListCreateView(generics.ListCreateAPIView):
         return Response(ChatSummarySerializer(chat_data, many=True).data)
 
     def perform_create(self, serializer):
-        serializer.save(sender=self.request.user)
-
-
-
-
+        message = serializer.save(sender=self.request.user)
+        
+        # Get channel layer
+        channel_layer = get_channel_layer()
+        
+        # Send notification to receiver's group
+        receiver_group_name = f"user_{message.receiver.id}"
+        
+        # Prepare message data
+        message_data = {
+            'type': 'new_message',
+            'message': {
+                'id': message.id,
+                'sender_id': message.sender.id,
+                'message': message.message,
+                'timestamp': message.timestamp.isoformat(),
+            }
+        }
+        
+        # Send to receiver's group
+        async_to_sync(channel_layer.group_send)(
+            receiver_group_name,
+            message_data
+        )
 
 
 class MessagesDetailView(generics.RetrieveAPIView):
