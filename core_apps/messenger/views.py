@@ -116,7 +116,7 @@ class MessageListCreateView(generics.ListCreateAPIView):
             'type': 'new_message',
             'message': {
                 'id': message.id,
-                'sender_id': message.sender.id,
+                'sender': message.sender.id,
                 'message': message.message,
                 'timestamp': message.timestamp.isoformat(),
             }
