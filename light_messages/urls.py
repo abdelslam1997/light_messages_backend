@@ -27,16 +27,20 @@ from rest_framework_simplejwt.views import TokenVerifyView
 
 
 urlpatterns = [
+    # Make sure to make ADMIN_URL a secret on production environments
     path(settings.ADMIN_URL, admin.site.urls),
+    # Auth URLs
     path("api/v1/auth/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/v1/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("api/v1/auth/token/verify/", TokenVerifyView.as_view(), name="token_verify"),
+    # Users URLs
     path("api/v1/users/", include("core_apps.users.urls")),
+    # Conversations URLs
     path("api/v1/conversations/", include("core_apps.messenger.urls")),
 ]
 
-# Add Media & Static URLS
-if settings.DEBUG:
-    from django.conf.urls.static import static
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+# Add Media & Static URLs -- Now served by Nginx
+# if settings.DEBUG:
+#     from django.conf.urls.static import static
+#     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+#     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

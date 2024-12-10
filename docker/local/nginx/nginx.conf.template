@@ -7,11 +7,14 @@ events {
 }
 
 http {
+    include       mime.types;
+    default_type  application/octet-stream;
+
     client_max_body_size 10M;  # Set maximum upload size to 10MB globally
 
-    # Add timeout settings
-    proxy_read_timeout 86400s;
-    proxy_send_timeout 86400s;
+    # Add timeout settings - Global
+    proxy_read_timeout 60s;
+    proxy_send_timeout 60s;
 
     # Define the upstream group
     upstream django {
@@ -20,7 +23,6 @@ http {
 
     # Define the server block
     server {
-        client_max_body_size 10M;  # Set maximum upload size to 10MB for this server
         listen 80; # Listen on port 80
         server_name localhost; # Set the server name to 'localhost'
 
@@ -42,12 +44,54 @@ http {
             proxy_send_timeout 60s;
         }
 
-        location / {
+        location /api/v1/redoc/ {
             proxy_pass http://django; # Proxy requests to the 'django' upstream
 
             proxy_set_header Host $host; # Preserve the original Host header
             proxy_set_header X-Real-IP $remote_addr; # Forward the real client IP address
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; # Add X-Forwarded-For header to keep track of client IPs
+
+            ## Disable rewriting of the Location header (may enable it later if needed)
+            # proxy_redirect off;
         }
+
+        location /api/v1/swagger/ {
+            proxy_pass http://django; # Proxy requests to the 'django' upstream
+
+            proxy_set_header Host $host; # Preserve the original Host header
+            proxy_set_header X-Real-IP $remote_addr; # Forward the real client IP address
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; # Add X-Forwarded-For header to keep track of client IPs
+
+            # proxy_redirect off;
+        }
+
+        location /api/v1/ {
+            proxy_pass http://django; # Proxy requests to the 'django' upstream
+
+            proxy_set_header Host $host; # Preserve the original Host header
+            proxy_set_header X-Real-IP $remote_addr; # Forward the real client IP address
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; # Add X-Forwarded-For header to keep track of client IPs
+
+            # proxy_redirect off;
+        }
+
+        location /${ADMIN_PATH}/ {
+            proxy_pass http://django;
+            
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+            # proxy_redirect off;
+        }
+
+        location /static/ {
+            alias /app/static/; # Serve static files from the 'static' directory
+        }
+
+        location /media/ {
+            alias /app/media/; # Serve media files from the 'media' directory
+        }
+
     }
 }
