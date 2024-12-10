@@ -1,4 +1,4 @@
-from rest_framework.views import APIView
+from rest_framework.generics import CreateAPIView, RetrieveAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
@@ -7,7 +7,7 @@ from .serializers import UserRegistrationSerializer, UserSerializer  # Assuming 
 
 User = get_user_model()
 
-class UserRegistrationView(APIView):
+class UserRegistrationView(CreateAPIView):
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
@@ -16,19 +16,12 @@ class UserRegistrationView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 
-    def get(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
-        
-        serializer = UserSerializer(request.user, context={"request": request})
-        return Response(serializer.data)
-
-
-class UserListView(APIView):
+class UserRetrieveView(RetrieveAPIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = UserSerializer
 
     def get(self, request, *args, **kwargs):
-        users = User.objects.all().exclude(id=request.user.id)
-        serializer = UserSerializer(users, many=True, context={"request": request})
-        return Response(serializer.data)
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)

@@ -28,11 +28,11 @@ from rest_framework_simplejwt.views import TokenVerifyView
 
 urlpatterns = [
     path(settings.ADMIN_URL, admin.site.urls),
-    path("api/v1/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
-    path("api/v1/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-    path("api/v1/token/verify/", TokenVerifyView.as_view(), name="token_verify"),
+    path("api/v1/auth/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("api/v1/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("api/v1/auth/token/verify/", TokenVerifyView.as_view(), name="token_verify"),
     path("api/v1/users/", include("core_apps.users.urls")),
-    path("api/v1/messages/", include("core_apps.messenger.urls")),
+    path("api/v1/conversations/", include("core_apps.messenger.urls")),
 ]
 
 # Add Media & Static URLS
