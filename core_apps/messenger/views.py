@@ -12,7 +12,6 @@ from django.db.models import (
 )
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
-from django.conf import settings
 
 from .models import Message
 from .serializers import (
@@ -24,8 +23,7 @@ from .paginations import (
     RecentConversationsPagination,
     ConversationMessagesPagination
 )
-
-from asgiref.sync import async_to_sync
+from .signals import messages_read
 
 
 User = get_user_model()
@@ -50,32 +48,25 @@ class ConversationMessageListCreateView(generics.ListCreateAPIView):
         if receiver.id == self.request.user.id:
             raise ValidationError({
                 'receiver': [_('You cannot send a message to yourself.'),]
-            })
-        
-        message = serializer.save(sender=self.request.user, receiver=receiver)
-        # Get channel layer
-        channel_layer = get_channel_layer()
-        # Send notification to receiver's group
-        receiver_group_name = f"user_{receiver_id}"
-        # Prepare message data
-        message_data = {
-            'type': 'new_message',
-            'message': {
-                'id': message.id,
-                'sender': message.sender.id,
-                'message': message.message,
-                'timestamp': message.timestamp.isoformat(),
-            }
-        }
-        # Send to receiver's group
-        async_to_sync(channel_layer.group_send)(
-            receiver_group_name,
-            message_data
-        )
+            })        
+        serializer.save(sender=self.request.user, receiver=receiver)
 
     def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
         # Mark all previous messages as read
-        self.get_queryset().update(read=True)
+        sender_id = self.kwargs.get('user_id')
+        read_updated_qs = queryset.filter(sender_id=sender_id, read=False)
+        last_message = read_updated_qs.first()
+
+        read_updated_qs.update(read=True)
+        # Get the ID of the last message that was read
+        if last_message:
+            messages_read.send(
+                sender=self.__class__,
+                reader_id=request.user.id,
+                sender_id=sender_id,
+                last_message=last_message
+            )
         # Get the paginated queryset
         queryset = self.paginate_queryset(self.get_queryset())
         serializer = MessageDetailSerializer(queryset, many=True)
@@ -119,27 +110,10 @@ class ConversationListView(generics.ListAPIView):
         )
         ### TODO: Add Analytics after adding the loggers in settings.py
         ### Uncomment the following if you want to see actual SQL query
-        print(queryset.query)
+        # print(queryset.query)
         return queryset
 
     def list(self, request, *args, **kwargs):
         queryset = self.paginate_queryset(self.get_queryset())
-        chat_data = []
-        user = self.request.user
-        for message in queryset:
-            profile_image_url = request.build_absolute_uri(
-                settings.MEDIA_URL + message.other_user_profile_image
-            )
-            chat_data.append({
-                'user_id': message.other_user_id,
-                'first_name': message.other_user_name,
-                'profile_image': profile_image_url,
-                'last_message': message.message,
-                'timestamp': message.timestamp,
-                'unread_count': Message.objects.filter(
-                    receiver=user,
-                    sender_id=message.other_user_id,
-                    read=False
-                ).count()
-            })
-        return self.get_paginated_response(chat_data)
+        serializer = self.get_serializer(queryset, many=True)
+        return self.get_paginated_response(serializer.data)

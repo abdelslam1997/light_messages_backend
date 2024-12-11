@@ -51,7 +51,12 @@ class MessageConsumer(AsyncWebsocketConsumer):
 
     async def new_message(self, event):
         # Send message to WebSocket
-        await self.send(text_data=json.dumps(event['message']))
+        await self.send(text_data=json.dumps(event))
+
+    async def read_message(self, event):
+        print('read_message event received:', event)
+        # Send message to WebSocket
+        await self.send(text_data=json.dumps(event))
 
 
     async def keep_connection_alive(self):
