@@ -29,6 +29,9 @@ makemigrations:
 migrate:
 	$(DOCKER_COMPOSE) run --rm $(SERVICE) python manage.py migrate
 
+redis-cli:
+	$(DOCKER_COMPOSE) exec redis redis-cli
+
 pytest:
 	$(DOCKER_COMPOSE) run --rm $(SERVICE) pytest -p no:warnings --cov=. -v $(path)
 
