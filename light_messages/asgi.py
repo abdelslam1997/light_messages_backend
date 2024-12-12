@@ -10,7 +10,7 @@ https://docs.djangoproject.com/en/5.0/howto/deployment/asgi/
 import os
 import django
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "light_messages.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "light_messages.settings.local")
 django.setup()  # Setup Django first
 
 from django.core.asgi import get_asgi_application
