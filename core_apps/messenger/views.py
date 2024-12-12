@@ -50,27 +50,37 @@ class ConversationMessageListCreateView(generics.ListCreateAPIView):
                 'receiver': [_('You cannot send a message to yourself.'),]
             })        
         serializer.save(sender=self.request.user, receiver=receiver)
+        # Emit the read signal to previous messages of receiver
+        self.emit_read_signal(receiver_id, self.request.user.id, self.get_queryset())
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
-        # Mark all previous messages as read
+        # Emit the read signal
         sender_id = self.kwargs.get('user_id')
-        read_updated_qs = queryset.filter(sender_id=sender_id, read=False)
-        last_message = read_updated_qs.first()
-
-        read_updated_qs.update(read=True)
-        # Get the ID of the last message that was read
-        if last_message:
-            messages_read.send(
-                sender=self.__class__,
-                reader_id=request.user.id,
-                sender_id=sender_id,
-                last_message=last_message
-            )
+        reader_id = request.user.id
+        self.emit_read_signal(sender_id, reader_id, queryset)
         # Get the paginated queryset
-        queryset = self.paginate_queryset(self.get_queryset())
+        queryset = self.paginate_queryset(queryset)
         serializer = MessageDetailSerializer(queryset, many=True)
         return self.get_paginated_response(serializer.data)
+    
+    def emit_read_signal(self, sender_id, reader_id, queryset) -> bool:
+        ''' Emit the read signal to the sender of the messages '''
+        # Prepare queryset to get the last message that was read
+        read_updated_qs = queryset.filter(sender_id=sender_id, read=False)
+        last_message = read_updated_qs.first()
+        if last_message is None:
+            return False
+        # Mark all previous messages as read
+        read_updated_qs.update(read=True)
+        # Get the ID of the last message that was read
+        messages_read.send(
+            sender=self.__class__,
+            reader_id=reader_id,
+            sender_id=sender_id,
+            last_message=last_message
+        )
+        return True
 
 
 class ConversationListView(generics.ListAPIView):
