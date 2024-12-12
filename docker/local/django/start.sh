@@ -11,4 +11,4 @@ python manage.py collectstatic --no-input
 ## daphne -b 0.0.0.0 -p 8000 light_messages.asgi:application
 
 ### Run with runserver
-python manage.py runserver
+python manage.py runserver 0.0.0.0:8000
