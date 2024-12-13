@@ -33,7 +33,7 @@ redis-cli:
 	$(DOCKER_COMPOSE) exec redis redis-cli
 
 pytest:
-	$(DOCKER_COMPOSE) run --rm $(SERVICE) pytest -p no:warnings --cov=. -v $(path)
+	$(DOCKER_COMPOSE) run --rm $(SERVICE) pytest -rP -p no:warnings --cov=. -v $(path)
 
 pytest-print:
 	$(DOCKER_COMPOSE) run --rm $(SERVICE) pytest -s -p no:warnings --cov=. -v $(path)
@@ -41,7 +41,8 @@ pytest-print:
 pytest-html:
 	$(DOCKER_COMPOSE) run --rm $(SERVICE) pytest -p no:warnings --cov=. --cov-report html $(path)
 
-# Example usage:
+### Example usage:
+# make pytest 
 # make pytest path=tests/test_file.py
 # make pytest-print path=tests/test_file.py
 # make pytest-html path=tests/test_file.py

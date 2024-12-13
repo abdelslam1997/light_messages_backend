@@ -13,20 +13,3 @@ register(UserFactory)
 @pytest.fixture
 def user(db, user_factory):
     return user_factory()
-
-
-
-
-@pytest.fixture
-def mock_request():
-    def middleware(request):
-        middleware = SessionMiddleware(lambda req: None)
-        middleware.process_request(request)
-        request.session.save()
-
-        middleware = AuthenticationMiddleware(lambda req: None)
-        middleware.process_request(request)
-
-        return request
-
-    return middleware(RequestFactory().get("/"))
