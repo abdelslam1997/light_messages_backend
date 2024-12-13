@@ -2,6 +2,12 @@ DOCKER_COMPOSE = docker compose -f local_docker_compose.yml
 SERVICE = light_messages_backend
 path = .
 
+rebuild:
+	$(DOCKER_COMPOSE) down
+	$(DOCKER_COMPOSE) build
+	$(DOCKER_COMPOSE) up -d
+	$(DOCKER_COMPOSE) logs -f
+
 build:
 	$(DOCKER_COMPOSE) build
 
