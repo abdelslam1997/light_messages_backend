@@ -65,3 +65,19 @@ class UserRegistrationSerializer(ModelSerializer):
         user.set_password(validated_data["password"])
         user.save()
         return user
+
+
+class UserSearchSerializer(ModelSerializer):
+    profile_image = SerializerMethodField()
+    class Meta:
+        model = User
+        fields = ("id", "email", "first_name", "last_name", "profile_image")
+        # All fields are read only
+        read_only_fields = fields
+
+    def get_profile_image(self, obj):
+        ''' Build the absloute profile image URL '''
+        request = self.context.get("request")
+        if request and obj.profile_image and hasattr(obj.profile_image, "url"):
+            return request.build_absolute_uri(obj.profile_image.url)
+        return None
