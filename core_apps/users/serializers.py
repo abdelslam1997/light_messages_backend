@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 
 from .exceptions import DuplicatedEmailException
+from .utils.images import validate_image_file
 
 User = get_user_model()
 
@@ -53,6 +54,11 @@ class UserRegistrationSerializer(ModelSerializer):
         if not last_name:
             raise ValidationError(_("Last Name is required"))
         return last_name
+
+    def validate_profile_image(self, profile_image):
+        if profile_image:
+            validate_image_file(profile_image)
+        return profile_image
 
     def create(self, validated_data):
 

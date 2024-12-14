@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.utils.translation import gettext_lazy as _
 
 from core_apps.users.managers import UserManager
+from .utils.images import get_profile_image_path
 
 
 class LightMessagesUser(AbstractBaseUser, PermissionsMixin):
@@ -18,7 +19,7 @@ class LightMessagesUser(AbstractBaseUser, PermissionsMixin):
 
     profile_image = models.ImageField(
         verbose_name=_("Profile Image"),
-        upload_to="profile_images/",
+        upload_to=get_profile_image_path,
         blank=True,
         null=True,
     )

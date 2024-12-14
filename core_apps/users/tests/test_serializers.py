@@ -68,23 +68,10 @@ class TestUserRegistrationSerializer:
         assert "first_name" in serializer.errors
         assert "last_name" in serializer.errors
 
-    def test_creates_user_with_profile_image(self):
-        from PIL import Image
-        import io
-        # Create a new image with PIL
-        image = Image.new('RGB', (100, 100), color = 'red')
-        # Save the image to a BytesIO object
-        image_io = io.BytesIO()
-        # Save the image to the BytesIO object in JPEG format
-        image.save(image_io, 'JPEG')
-
-        # Create a SimpleUploadedFile object from the BytesIO object
-        image_file = SimpleUploadedFile(
-            "test_image.jpg",
-            image_io.getvalue(),
-            content_type="image/jpeg"
+    def test_creates_user_with_profile_image(self, mock_image_file):
+        image_file = mock_image_file(
+            size=(100, 100), color='red', format='JPEG'
         )
-
         # Create a user with profile image
         data = {
             "email": "test@example.com",
@@ -93,13 +80,54 @@ class TestUserRegistrationSerializer:
             "password": "testpass123",
             "profile_image": image_file
         }
-        
         # Validate the data
         serializer = UserRegistrationSerializer(data=data)
+        serializer.is_valid()
         assert serializer.is_valid()
         # Check that the profile image is saved
         user = serializer.save()
         assert user.profile_image is not None
+
+    def test_invalid_profile_image(self):
+        # Test invalid image type
+        invalid_file = SimpleUploadedFile(
+            "test.txt",
+            b"invalid file content",
+            content_type="text/plain"
+        )
+        data = {
+            "email": "test@example.com",
+            "first_name": "Test",
+            "last_name": "User",
+            "password": "testpass123",
+            "profile_image": invalid_file
+        }
+        serializer = UserRegistrationSerializer(data=data)
+        assert not serializer.is_valid()
+        errors = serializer.errors
+        assert "profile_image" in errors
+        assert "invalid_image" in errors["profile_image"][0].code
+
+    def test_profile_image_size_limit(self, mock_image_file):
+        oversized_file = mock_image_file(
+            size=(1024, 1024), 
+            override_file_size=6 * 1024 * 1024
+        )
+        data = {
+            "email": "test@example.com",
+            "first_name": "Test",
+            "last_name": "User",
+            "password": "testpass123",
+            "profile_image": oversized_file
+        }
+        serializer = UserRegistrationSerializer(data=data)
+
+        with pytest.raises(ValidationError):
+            serializer.is_valid(raise_exception=True)
+
+        errors = serializer.errors
+        assert "profile_image" in errors
+        assert "exceeded_size_limit" in errors["profile_image"][0].code
 
 
 @pytest.mark.django_db
