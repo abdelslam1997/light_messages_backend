@@ -41,29 +41,38 @@ class MessageDetailSerializer(serializers.ModelSerializer):
 
 
 class ConversationSerializer(serializers.Serializer):
-    user_id = serializers.IntegerField(source='other_user_id')
-    first_name = serializers.CharField(source='other_user_name')
+    user_id = serializers.SerializerMethodField()
+    first_name = serializers.SerializerMethodField()
     profile_image = serializers.SerializerMethodField()
     last_message = serializers.CharField(source='message')
     timestamp = serializers.DateTimeField()
     unread_count = serializers.SerializerMethodField()
 
-    def get_unread_count(self, obj):
-        user = self.context['request'].user
-        return Message.objects.filter(
-            receiver=user,
-            sender_id=obj.other_user_id,
-            read=False
-        ).count()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = self.context['request'].user
+
+    def get_user_id(self, obj):
+        return obj.get_other_user_id(self.user.id)
+    
+    def get_first_name(self, obj):
+        return obj.get_other_user_first_name(self.user.id)
     
     def get_profile_image(self, obj):
-        profile_image = obj.other_user_profile_image
+        profile_image = obj.get_other_user_profile_image(self.user.id)
         if profile_image:
             return self.context['request'].build_absolute_uri(
                 settings.MEDIA_URL +
                 profile_image
             )
         return None
+    
+    def get_unread_count(self, obj):
+        return Message.objects.filter(
+            receiver=self.user,
+            sender_id=obj.get_other_user_id(self.user.id),
+            read=False
+        ).count()
 
     class Meta:
         fields = ['user_id', 'first_name', 'profile_image', 'last_message', 'timestamp', 'unread_count']

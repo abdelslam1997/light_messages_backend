@@ -3,11 +3,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 
-from django.db.models import (
-    Q, F, Case, 
-    When, IntegerField, OuterRef, 
-    Subquery, CharField
-)
+from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
 
@@ -21,6 +17,7 @@ from .paginations import (
     RecentConversationsPagination,
     ConversationMessagesPagination
 )
+from .utils.conversations import get_conversation_id
 from .signals import messages_read
 
 
@@ -33,10 +30,13 @@ class ConversationMessageListCreateView(generics.ListCreateAPIView):
     pagination_class = ConversationMessagesPagination
 
     def get_queryset(self):
-        user = self.request.user
-        other_user_id = self.kwargs.get('user_id')
+        # Get the conversation ID
+        conversation_id = get_conversation_id(
+            self.request.user.id,
+            self.kwargs.get('user_id')
+        )
         return Message.objects.filter(
-            Q(sender=user, receiver_id=other_user_id) | Q(sender_id=other_user_id, receiver=user)
+            conversation_id=conversation_id
         ).order_by('-timestamp')
 
     def perform_create(self, serializer):
@@ -89,37 +89,17 @@ class ConversationListView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        messages = Message.objects.filter(
+        return Message.objects.select_related(
+            'receiver', 
+            'sender'
+        ).filter(
             Q(sender=user) | Q(receiver=user)
-        ).annotate(
-            other_user_id=Case(
-                When(sender=user, then=F('receiver_id')),
-                default=F('sender_id'),
-                output_field=IntegerField()
-            ),
-            other_user_name=Case(
-                When(sender=user, then=F('receiver__first_name')),
-                default=F('sender__first_name'),
-                output_field=CharField()
-            ),
-            other_user_profile_image=Case(
-                When(sender=user, then=F('receiver__profile_image')),
-                default=F('sender__profile_image'),
-                output_field=CharField()
-            ),
-        ).order_by('-timestamp')
-
-        subquery = messages.filter(
-            other_user_id=OuterRef('other_user_id')
-        ).order_by('-id').values('id')[:1]
-
-        queryset = messages.filter(
-            id=Subquery(subquery)
+        ).distinct(
+            'conversation_id'
+        ).order_by(
+            'conversation_id',
+            '-timestamp'
         )
-        ### TODO: Add Analytics after adding the loggers in settings.py
-        ### Uncomment the following if you want to see actual SQL query
-        # print(queryset.query)
-        return queryset
 
     def list(self, request, *args, **kwargs):
         queryset = self.paginate_queryset(self.get_queryset())

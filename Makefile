@@ -14,6 +14,10 @@ build:
 build-no-cache:
 	$(DOCKER_COMPOSE) build --no-cache
 
+remove-all:
+	echo "Stopping and removing all containers, networks, and volumes..."
+	$(DOCKER_COMPOSE) down --volumes --remove-orphans
+	
 up:
 	$(DOCKER_COMPOSE) up -d
 
