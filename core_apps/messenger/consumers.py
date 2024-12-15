@@ -1,13 +1,17 @@
 import json
 import asyncio
 from channels.generic.websocket import AsyncWebsocketConsumer
+
 from django.contrib.auth import get_user_model
+from django.conf import settings
 
 User = get_user_model()
 
 class MessageConsumer(AsyncWebsocketConsumer):
-    PING_INTERVAL = 30   # seconds between pings
-    PONG_TIMEOUT = 10    # how long to wait for pong response
+    # Seconds between pings
+    PING_INTERVAL = settings.MESSAGE_CONSUMER_PING_INTERVAL
+    # How long to wait for pong response
+    PONG_TIMEOUT = settings.MESSAGE_CONSUMER_PONG_TIMEOUT
 
     async def connect(self):
         self.user = self.scope["user"]

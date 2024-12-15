@@ -2,11 +2,14 @@ import pytest
 from pytest_factoryboy import register
 from PIL import Image
 import io
+import asyncio
+from channels.layers import get_channel_layer
 
 from django.test import RequestFactory
 from django.contrib.auth.middleware import AuthenticationMiddleware
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.conf import settings
 
 from core_apps.users.tests.factories import UserFactory
 
@@ -104,3 +107,39 @@ def mock_image_file():
         return image_file
 
     return create_mock_image_file
+
+
+@pytest.fixture(autouse=True)
+async def setup_channel_layers():
+    """Reset channel layers for each test"""
+    channel_layers_setting = settings.CHANNEL_LAYERS
+    yield
+    # Clear channel layers after each test
+    for channel_layer in channel_layers_setting.values():
+        if "BACKEND" in channel_layer:
+            try:
+                layer = get_channel_layer()
+                await layer.flush()
+            except Exception:
+                pass
+
+
+@pytest.fixture(scope="session")
+def event_loop():
+    """Create an instance of the default event loop for each test case."""
+    policy = asyncio.get_event_loop_policy()
+    loop = policy.new_event_loop()
+    yield loop
+    loop.close()
+
+
+@pytest.fixture(autouse=True)
+def use_test_settings(settings):
+    """Force use of test settings"""
+    settings.CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer"
+        }
+    }
+    settings.MESSAGE_CONSUMER_PING_INTERVAL = 5
+    settings.MESSAGE_CONSUMER_PONG_TIMEOUT = 2

@@ -94,6 +94,9 @@ CHANNEL_LAYERS = {
     },
 }
 
+# Timeouts
+MESSAGE_CONSUMER_PING_INTERVAL = env.int("MESSAGE_CONSUMER_PING_INTERVAL", default=40)
+MESSAGE_CONSUMER_PONG_TIMEOUT = env.int("MESSAGE_CONSUMER_PONG_TIMEOUT", default=10)
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
