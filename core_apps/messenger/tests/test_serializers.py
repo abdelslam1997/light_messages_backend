@@ -154,7 +154,7 @@ class TestConversationSerializer:
         serializer = ConversationSerializer(message, context=context)
         
         expected_url = self.request.build_absolute_uri(
-            settings.MEDIA_URL + other_user.profile_image.url
+            other_user.profile_image.url
         )
         assert serializer.data['profile_image'] == expected_url
 

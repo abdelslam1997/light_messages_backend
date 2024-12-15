@@ -78,6 +78,7 @@ class Message(models.Model):
             return self.receiver.profile_image.url
         elif self.sender.profile_image:
             return self.sender.profile_image.url
+        return None
 
     def __str__(self):
         return self.message

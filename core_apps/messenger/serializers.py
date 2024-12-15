@@ -60,12 +60,7 @@ class ConversationSerializer(serializers.Serializer):
     
     def get_profile_image(self, obj):
         profile_image = obj.get_other_user_profile_image(self.user.id)
-        if profile_image:
-            return self.context['request'].build_absolute_uri(
-                settings.MEDIA_URL +
-                profile_image
-            )
-        return None
+        return self.context['request'].build_absolute_uri(profile_image) if profile_image else None
     
     def get_unread_count(self, obj):
         return Message.objects.filter(
