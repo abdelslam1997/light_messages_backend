@@ -8,6 +8,7 @@ on:
 jobs:
   build-and-push:
     name: Build and Push Docker Image
+    if: contains(github.event.head_commit.message, 'build-docker-image')
     runs-on: ubuntu-latest  # GitHub-hosted runner
 
     steps:
