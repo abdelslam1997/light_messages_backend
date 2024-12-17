@@ -6,9 +6,11 @@ resources:
   - ../../base
   - ./postgres/deployment.yaml
   - ./postgres/service.yaml
+  - ./postgres/storage.yaml
   - ./redis/deployment.yaml
   - ./redis/service.yaml
-
+  - ./static/static-server.yaml
+  - ./static/shared-storage.yaml
 
 # Generate Secret from your .env file
 secretGenerator:
@@ -18,6 +20,9 @@ secretGenerator:
   - name: backend-secret
     envs:
       - ./.envs/local/.django.env
+  - name: nginx-secret
+    envs:
+      - ./.envs/local/.nginx.env
 
 # Disable name suffix hashing for predictable names
 generatorOptions:

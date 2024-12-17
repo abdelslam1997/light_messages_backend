@@ -31,5 +31,4 @@ until check_postgres; do
 done
 
 echo "Database is up - continuing..."
-echo "Running start.sh ..."
-exec /start.sh
+exec "$@"

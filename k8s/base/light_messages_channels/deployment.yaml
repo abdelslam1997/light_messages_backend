@@ -29,15 +29,5 @@ spec:
               cpu: "200m"
               memory: "256Mi"
           env:
-            - name: DJANGO_SETTINGS_MODULE
-              value: "light_messages.settings.local"
-            - name: POSTGRES_HOST
-              value: "postgres-service"
-            - name: POSTGRES_PORT
-              value: "5432"
-            - name: REDIS_HOST
-              value: "redis-service"
-            - name: REDIS_PORT
-              value: "6379"
             - name: SERVICE_TYPE
-              value: "channels"
+              value: "channel"

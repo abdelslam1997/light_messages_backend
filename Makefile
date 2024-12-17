@@ -51,6 +51,12 @@ pytest-print:
 pytest-html:
 	$(DOCKER_COMPOSE) run --rm $(SERVICE) pytest -p no:warnings --cov=. --cov-report html $(path)
 
+### Example usage:
+# make pytest 
+# make pytest path=tests/test_file.py
+
+
+### Kubernetes 
 minikube-tunnel:
 	minikube tunnel
 
@@ -58,37 +64,32 @@ minikube-restart:
 	minikube stop
 	minikube start
 	minikube addons enable ingress
-	kubectl apply -k k8s/overlays/local
-
-k8s-reset:
-	kubectl delete -f k8s/overlays/local/
-	kubectl apply -k k8s/overlays/local
-	@echo "Wait for ingress to be ready..."
-	sleep 10
 	minikube tunnel
 
-kubectl-apply:
-	kubectl apply -k k8s/overlays/local/
+minikube-dashboard:
+	minikube dashboard
 
-kubectl-delete:
-	kubectl delete -f k8s/overlays/local/
-
-kubectl-delete-all:
-	kubectl delete ingress --all
-	kubectl delete services --all
-	kubectl delete deployments --all
-	kubectl delete pods --all
-
-k8s-restart:
-	kubectl delete ingress --all
-	kubectl delete services --all
-	kubectl delete deployments --all
-	kubectl delete pods --all
+k8s-reapply:
+	kubectl delete -k k8s/overlays/local
 	kubectl apply -k k8s/overlays/local
 	kubectl get all
 
-### Example usage:
-# make pytest 
-# make pytest path=tests/test_file.py
-# make pytest-print path=tests/test_file.py
-# make pytest-html path=tests/test_file.py
+k8s-apply:
+	kubectl apply -k k8s/overlays/local
+	kubectl get all
+
+k8s-delete:
+	kubectl delete -k k8s/overlays/local
+	kubectl get all
+
+k8s-delete-all:
+	kubectl delete all --all
+
+k8s-ingress-controller:
+	kubectl get pods -n ingress-nginx
+
+k8s-logs-web:
+	kubectl logs -l app=light-messages-web
+
+k8s-logs-channels:
+	kubectl logs -l app=light-messages-channels

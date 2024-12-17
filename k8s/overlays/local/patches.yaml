@@ -15,7 +15,8 @@ spec:
       containers:
         - name: backend-web
           # Repository and tag for the Docker image or local image
-          image: abdelslam1997/light_messages_backend:v1.0.4
+          image: abdelslam1997/light_messages_backend:v1.0.5
+          command: ["/bin/sh", "-c", "/start.sh"]
           resources:
             limits:
               cpu: "500m"
@@ -31,6 +32,17 @@ spec:
                 name: backend-secret
             - secretRef:
                 name: postgres-secret
+          volumeMounts:
+            - name: shared-storage
+              mountPath: /app/static
+              subPath: static
+            - name: shared-storage
+              mountPath: /app/media
+              subPath: media
+      volumes:
+        - name: shared-storage
+          persistentVolumeClaim:
+            claimName: shared-storage-pvc
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -40,7 +52,7 @@ spec:
   selector:
     matchLabels:
       app: light-messages-channels
-  replicas: 1  # Changed to 1 for local development
+  replicas: 4  # Changed to 1 for local development
   template:
     metadata:
       labels:
@@ -49,7 +61,8 @@ spec:
       containers:
         - name: backend-channels
           # Repository and tag for the Docker image or local image
-          image: abdelslam1997/light_messages_backend:v1.0.4
+          image: abdelslam1997/light_messages_backend:v1.0.5
+          command: ["/bin/sh", "-c", "/start.sh"]
           resources:
             limits:
               cpu: "500m"
@@ -71,11 +84,15 @@ kind: Ingress
 metadata:
   name: light-messages-ingress
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /$1
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "25m"
+    nginx.org/client-max-body-size: "25m"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, PUT, POST, DELETE, PATCH, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization"
 spec:
   ingressClassName: nginx
   rules:
@@ -89,6 +106,13 @@ spec:
                 name: backend-service-web
                 port:
                   number: 8000
+          - path: /admin_123/ # change on-production using (CI/CD) from .nginx.env file
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service-web
+                port:
+                  number: 8000
           - path: /ws/
             pathType: Prefix
             backend:
@@ -96,3 +120,17 @@ spec:
                 name: backend-service-channels
                 port:
                   number: 8000
+          - path: /static/
+            pathType: Prefix
+            backend:
+              service:
+                name: static-file-server
+                port:
+                  number: 80
+          - path: /media/
+            pathType: Prefix
+            backend:
+              service:
+                name: static-file-server
+                port:
+                  number: 80

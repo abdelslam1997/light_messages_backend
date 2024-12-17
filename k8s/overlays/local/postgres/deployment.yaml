@@ -14,6 +14,8 @@ spec:
       labels:
         app: postgres
     spec:
+      securityContext:
+        fsGroup: 70
       containers:
         - name: postgres
           image: postgres:15.3-alpine
@@ -32,6 +34,10 @@ spec:
           envFrom:
             - secretRef:
                 name: postgres-secret
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
       volumes:
         - name: postgres-storage
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: postgres-pvc
