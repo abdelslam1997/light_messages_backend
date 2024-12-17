@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Start from the base configuration
+resources:
+  - ../../base
+  - ./postgres/deployment.yaml
+  - ./postgres/service.yaml
+  - ./redis/deployment.yaml
+  - ./redis/service.yaml
+
+
+# Generate Secret from your .env file
+secretGenerator:
+  - name: postgres-secret
+    envs:
+      - ./.envs/local/.postgresql.env
+  - name: backend-secret
+    envs:
+      - ./.envs/local/.django.env
+
+# Disable name suffix hashing for predictable names
+generatorOptions:
+  disableNameSuffixHash: true
+
+# Apply patches to modify existing resources
+patchesStrategicMerge:
+  - patches.yaml

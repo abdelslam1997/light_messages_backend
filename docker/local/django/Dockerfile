@@ -16,7 +16,7 @@ RUN apt-get update && \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
+# Install Python dependencies with explicit gunicorn
 COPY ./requirements ./requirements
 ARG ENVIRONMENT=local
 RUN pip wheel --no-cache-dir --no-deps --wheel-dir /build/wheels -r ./requirements/${ENVIRONMENT}.txt
@@ -42,6 +42,10 @@ RUN apt-get update && \
 COPY --from=builder /build/wheels /wheels
 RUN pip install --no-cache-dir /wheels/* \
     && rm -rf /wheels
+
+# Copy the application code
+COPY . /app
+
 
 # Copy and prepare entry point scripts
 ARG ENVIRONMENT=local

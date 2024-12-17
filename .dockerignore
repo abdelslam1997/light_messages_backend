@@ -59,3 +59,9 @@ coverage.xml
 # Local development
 local_settings.py
 notes.txt
+
+.env
+
+# Kubernetes
+/k8s/overlays/local/.envs/
+/k8s/overlays/production/.envs/

@@ -51,6 +51,42 @@ pytest-print:
 pytest-html:
 	$(DOCKER_COMPOSE) run --rm $(SERVICE) pytest -p no:warnings --cov=. --cov-report html $(path)
 
+minikube-tunnel:
+	minikube tunnel
+
+minikube-restart:
+	minikube stop
+	minikube start
+	minikube addons enable ingress
+	kubectl apply -k k8s/overlays/local
+
+k8s-reset:
+	kubectl delete -f k8s/overlays/local/
+	kubectl apply -k k8s/overlays/local
+	@echo "Wait for ingress to be ready..."
+	sleep 10
+	minikube tunnel
+
+kubectl-apply:
+	kubectl apply -k k8s/overlays/local/
+
+kubectl-delete:
+	kubectl delete -f k8s/overlays/local/
+
+kubectl-delete-all:
+	kubectl delete ingress --all
+	kubectl delete services --all
+	kubectl delete deployments --all
+	kubectl delete pods --all
+
+k8s-restart:
+	kubectl delete ingress --all
+	kubectl delete services --all
+	kubectl delete deployments --all
+	kubectl delete pods --all
+	kubectl apply -k k8s/overlays/local
+	kubectl get all
+
 ### Example usage:
 # make pytest 
 # make pytest path=tests/test_file.py

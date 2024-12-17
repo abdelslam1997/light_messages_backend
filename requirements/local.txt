@@ -7,3 +7,4 @@ pytest-django==4.8.0
 pytest-asyncio==0.25.0
 Faker==0.7.4
 pytest-factoryboy==2.7.0
+gunicorn==23.0.0
