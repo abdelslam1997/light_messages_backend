@@ -20,9 +20,10 @@ from .paginations import UserSearchPagination
 
 User = get_user_model()
 
-class UserRegistrationView(CreateAPIView, ListAPIView):
+class UserRegistrationView(CreateAPIView):
     ''' Handle new user registration '''
     permission_classes = [AllowAny]
+    serializer_class = UserRegistrationSerializer
 
     def post(self, request, *args, **kwargs):
         serializer = UserRegistrationSerializer(data=request.data)
