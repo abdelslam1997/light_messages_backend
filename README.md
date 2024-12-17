@@ -13,6 +13,11 @@
   - [Accessing Services](#accessing-services)
 - [Testing](#testing)
 - [Kubernetes Deployment](#kubernetes-deployment)
+  - [Prerequisites](#prerequisites-1)
+  - [Setup Instructions](#setup-instructions)
+  - [Deployment Commands](#deployment-commands)
+  - [Accessing the Application](#accessing-the-application)
+  - [Scaling and Management](#scaling-and-management)
 - [API Documentation](#api-documentation)
 
 ## Overview
@@ -175,25 +180,109 @@ make pytest-html
 make pytest path=tests/test_file.py
 ```
 
-## Kubernetes Deployment (Minikube)
+## Kubernetes Deployment
+
+Deploying the Light Messages Backend on Kubernetes allows for scalable and resilient application management. This section guides you through setting up and deploying the application using Kubernetes and Minikube.
 
 ### Prerequisites
-- Minikube
-- kubectl
 
-### Basic Commands
+- **Minikube**: Runs a local Kubernetes cluster for testing. [Installation Guide](https://minikube.sigs.k8s.io/docs/start/)
+- **kubectl**: Command-line tool for Kubernetes. [Installation Guide](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
+- **Docker**: Needed for building container images. [Installation Guide](https://docs.docker.com/get-docker/)
+- **Make** (optional): Simplifies command execution using the provided Makefile. [Installation Guide](https://www.gnu.org/software/make/)
+
+### Setup Instructions
+
+1. **Start Minikube with Ingress Support**
+
+   Begin by starting Minikube and enabling the ingress addon:
+
+   ```bash
+   make minikube-start
+   ```
+
+   or manually for first time setup to make sure driver is docker and ingress is enabled and resources are allocated properly:
+
+   ```bash
+    minikube start --driver=docker --addons=ingress --cpus=2 --memory=4096
+    ```
+    note that you can adjust the cpus and memory according to your machine specs.
+
+2. **Set Up Environment**
+
+    Create the necessary environment files:
+    create  `k8s/overlays/local/.envs` directory and create the following files:
+
+    ```bash
+    touch k8s/overlays/local/.envs/.django.env
+    touch k8s/overlays/local/.envs/.postgresql.env
+    touch k8s/overlays/local/.envs/.nginx.env
+    ```
+
+3. **Update host in patches.yaml**
+
+    Update the host in `k8s/overlays/local/patches.yaml` to match your local machine hostname.
+
+    make sure to replace `light-messages.local` with your local machine hostname or add the hostname.
+
+    On Windows:
+    ```powershell
+    # View current hostname
+    hostname
+
+    # Add hostname to hosts file (Run as Administrator)
+    echo "127.0.0.1 light-messages.local" >> C:\Windows\System32\drivers\etc\hosts
+    ```
+
+    On Linux:
+    ```bash
+    # View current hostname
+    hostname
+
+    # Add hostname to hosts file
+    sudo sh -c 'echo "127.0.0.1 light-messages.local" >> /etc/hosts'
+    ```
+
+### Deployment Commands
+
+Deploy the Kubernetes resources using the provided manifests:
 ```bash
-# Start minikube
-make minikube-restart
-
-# Deploy application
 make k8s-apply
+```
 
-# View logs
+### Accessing the Application
+
+Once deployed, you can access the application using the following URLs:
+
+- **Backend API**: `http://<minikube-ip>/api/v1/`
+- **Admin Interface**: `http://<minikube-ip>/admin/`
+- **WebSocket**: `ws://<minikube-ip>/ws/`
+
+### Scaling and Management
+
+To scale the application, use the following commands:
+
+```bash
+# Scale the backend deployment
+kubectl scale deployment backend --replicas=<number-of-replicas>
+
+# Scale the channels deployment
+kubectl scale deployment channels --replicas=<number-of-replicas>
+```
+
+To view logs for the deployments:
+
+```bash
+# View logs for the backend
 make k8s-logs-web
-make k8s-logs-channels
 
-# Delete deployment
+# View logs for the channels
+make k8s-logs-channels
+```
+
+To delete the deployment:
+
+```bash
 make k8s-delete
 ```
 

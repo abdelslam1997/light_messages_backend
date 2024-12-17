@@ -51,14 +51,18 @@ pytest-print:
 pytest-html:
 	$(DOCKER_COMPOSE) run --rm $(SERVICE) pytest -p no:warnings --cov=. --cov-report html $(path)
 
-### Example usage:
-# make pytest 
-# make pytest path=tests/test_file.py
 
-
-### Kubernetes 
+### Kubernetes (Minikube) ###
 minikube-tunnel:
 	minikube tunnel
+
+minikube-start:
+	minikube start
+	minikube addons enable ingress
+	minikube tunnel
+
+minikube-stop:
+	minikube stop
 
 minikube-restart:
 	minikube stop
@@ -69,6 +73,7 @@ minikube-restart:
 minikube-dashboard:
 	minikube dashboard
 
+## Kubernetes (kubectl) ##
 k8s-reapply:
 	kubectl delete -k k8s/overlays/local
 	kubectl apply -k k8s/overlays/local
