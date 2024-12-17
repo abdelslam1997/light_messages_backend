@@ -15,7 +15,7 @@ spec:
       containers:
         - name: backend-web
           # Repository and tag for the Docker image or local image
-          image: abdelslam1997/light_messages_backend:v1.0.5
+          image: abdelslam1997/light_messages_backend:latest
           command: ["/bin/sh", "-c", "/start.sh"]
           resources:
             limits:
@@ -61,7 +61,7 @@ spec:
       containers:
         - name: backend-channels
           # Repository and tag for the Docker image or local image
-          image: abdelslam1997/light_messages_backend:v1.0.5
+          image: abdelslam1997/light_messages_backend:latest
           command: ["/bin/sh", "-c", "/start.sh"]
           resources:
             limits:
