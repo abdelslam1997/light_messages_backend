@@ -1,38 +1,37 @@
 # Light Messages Backend
 
 ## Table of Contents
+
 - [Overview](#overview)
+  - [Overview Docker Compose (Local Development)](#overview-docker-compose-local-development)
+  - [Overview Kubernetes Minikube (Local Deployment)](#overview-kubernetes-minikube-local-deployment)
 - [Tech Stack](#tech-stack)
+- [Architecture](#architecture)
 - [Project Setup](#project-setup)
   - [Prerequisites](#prerequisites)
   - [Environment Setup](#environment-setup)
-  - [Docker Compose Setup](#docker-compose-setup)
+- [Docker Deployment](#docker-deployment)
+  - [Deployment Diagram](#deployment-diagram)
+  - [Setup Instructions](#setup-instructions)
 - [Development](#development)
   - [Running the Project](#running-the-project)
   - [Common Commands](#common-commands)
   - [Accessing Services](#accessing-services)
 - [Testing](#testing)
-- [Kubernetes Deployment](#kubernetes-deployment)
-  - [Prerequisites](#prerequisites-1)
-  - [Setup Instructions](#setup-instructions)
-  - [Deployment Commands](#deployment-commands)
-  - [Accessing the Application](#accessing-the-application)
-  - [Scaling and Management](#scaling-and-management)
 - [API Documentation](#api-documentation)
+- [Kubernetes Deployment](#kubernetes-deployment)
+  - [Deployment Diagram](#deployment-diagram-1)
+  - [Setup Instructions](#setup-instructions-1)
 
 ## Overview
 
-Light Messages Backend is a scalable real-time messaging API built with Django. Key features:
+A demo backend showcasing a scalable, real-time messaging API built with Django, Docker, and Kubernetes.
 
-- Real-time messaging via WebSocket connections
-- RESTful API endpoints for message management
-- Secure user authentication and authorization
-- Horizontally scalable architecture
-- Containerized deployment with Docker and Kubernetes
-- Comprehensive test coverage
+### Overview Docker Compose (Local Development)
+![image](./imgs/docker_compose.png)
 
-### Frontend Integration
-Compatible with [Light Messages Frontend](https://github.com/abdelslam1997/light_messages_frontend) for a complete messaging solution.
+### Overview Kubernetes Minikube (Local Deployment)
+- will be updated soon
 
 ## Tech Stack
 
@@ -64,7 +63,32 @@ Compatible with [Light Messages Frontend](https://github.com/abdelslam1997/light
     - pytest-factoryboy (test factories)
 - Faker==0.7.x (fake data generation)
 
-## Project Setup ( Docker Compose )
+## Architecture
+
+The project architecture consists of the following components:
+
+- **Django Backend**: Serves RESTful API endpoints and handles WebSocket connections for real-time messaging.
+- **PostgreSQL Database**: Stores user data and message histories.
+- **Redis**: Acts as a message broker for Django Channels, enabling real-time features.
+- **Nginx**: Serves as a reverse proxy and static file server.
+- **Docker & Docker Compose**: Containerizes the application for consistent development environments.
+- **Kubernetes**: Orchestrates container deployment for scalability and high availability.
+
+### Architectural Differences Between Docker and Kubernetes
+
+- **Docker Compose**:
+  - Suitable for local development and testing.
+  - Uses `local_docker_compose.yml`, `Dockerfile`, and `nginx.conf.template` for configuration.
+  - All services run in a single host environment.
+  - Easier setup but limited in scalability.
+
+- **Kubernetes**:
+  - Ideal for production-grade deployments.
+  - Uses `kustomization.yaml`, `ingress.yaml`, and other manifests for configuration.
+  - Supports scaling, self-healing, and load balancing.
+  - More complex setup suitable for distributed environments.
+
+## Project Setup
 
 ### Prerequisites
 - Git [Official Site](https://git-scm.com/)
@@ -109,19 +133,39 @@ POSTGRES_PORT=5432
 ADMIN_PATH=admin
 ```
 
-### Docker Compose Setup
+## Docker Deployment
 
-Build and start services:
-```bash
-# Build images
-make build
+### Deployment Diagram
 
-# Start services
-make up
+![Docker Deployment Diagram](path/to/docker-deployment-diagram.png)
 
-# View logs
-make logs
-```
+### Setup Instructions
+
+The Docker Compose setup is designed for easy local development.
+
+- **Configuration Files**:
+  - **`local_docker_compose.yml`**: Defines services, volumes, and networks.
+  - **`Dockerfile`**: Specifies how to build the Docker image for the Django application.
+  - **`nginx.conf.template`**: Configures Nginx within the Docker container.
+
+**Steps**:
+
+1. **Build and Start Services**:
+   ```bash
+   make build
+   make up
+   ```
+
+2. **Apply Migrations and Create Superuser**:
+   ```bash
+   make migrate
+   make create-superuser
+   ```
+
+3. **Access Services**:
+   - API: http://localhost/api/v1/
+   - Admin Interface: http://localhost/admin/
+   - WebSocket: ws://localhost/ws/
 
 ## Development
 
@@ -180,113 +224,7 @@ make pytest-html
 make pytest path=tests/test_file.py
 ```
 
-## Kubernetes Deployment
-
-Deploying the Light Messages Backend on Kubernetes allows for scalable and resilient application management. This section guides you through setting up and deploying the application using Kubernetes and Minikube.
-
-### Prerequisites
-
-- **Minikube**: Runs a local Kubernetes cluster for testing. [Installation Guide](https://minikube.sigs.k8s.io/docs/start/)
-- **kubectl**: Command-line tool for Kubernetes. [Installation Guide](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
-- **Docker**: Needed for building container images. [Installation Guide](https://docs.docker.com/get-docker/)
-- **Make** (optional): Simplifies command execution using the provided Makefile. [Installation Guide](https://www.gnu.org/software/make/)
-
-### Setup Instructions
-
-1. **Start Minikube with Ingress Support**
-
-   Begin by starting Minikube and enabling the ingress addon:
-
-   ```bash
-   make minikube-start
-   ```
-
-   or manually for first time setup to make sure driver is docker and ingress is enabled and resources are allocated properly:
-
-   ```bash
-    minikube start --driver=docker --addons=ingress --cpus=2 --memory=4096
-    ```
-    note that you can adjust the cpus and memory according to your machine specs.
-
-2. **Set Up Environment**
-
-    Create the necessary environment files:
-    create  `k8s/overlays/local/.envs` directory and create the following files:
-
-    ```bash
-    touch k8s/overlays/local/.envs/.django.env
-    touch k8s/overlays/local/.envs/.postgresql.env
-    touch k8s/overlays/local/.envs/.nginx.env
-    ```
-
-3. **Update host in patches.yaml**
-
-    Update the host in `k8s/overlays/local/patches.yaml` to match your local machine hostname.
-
-    make sure to replace `light-messages.local` with your local machine hostname or add the hostname.
-
-    On Windows:
-    ```powershell
-    # View current hostname
-    hostname
-
-    # Add hostname to hosts file (Run as Administrator)
-    echo "127.0.0.1 light-messages.local" >> C:\Windows\System32\drivers\etc\hosts
-    ```
-
-    On Linux:
-    ```bash
-    # View current hostname
-    hostname
-
-    # Add hostname to hosts file
-    sudo sh -c 'echo "127.0.0.1 light-messages.local" >> /etc/hosts'
-    ```
-
-### Deployment Commands
-
-Deploy the Kubernetes resources using the provided manifests:
-```bash
-make k8s-apply
-```
-
-### Accessing the Application
-
-Once deployed, you can access the application using the following URLs:
-
-- **Backend API**: `http://<minikube-ip>/api/v1/`
-- **Admin Interface**: `http://<minikube-ip>/admin/`
-- **WebSocket**: `ws://<minikube-ip>/ws/`
-
-### Scaling and Management
-
-To scale the application, use the following commands:
-
-```bash
-# Scale the backend deployment
-kubectl scale deployment backend --replicas=<number-of-replicas>
-
-# Scale the channels deployment
-kubectl scale deployment channels --replicas=<number-of-replicas>
-```
-
-To view logs for the deployments:
-
-```bash
-# View logs for the backend
-make k8s-logs-web
-
-# View logs for the channels
-make k8s-logs-channels
-```
-
-To delete the deployment:
-
-```bash
-make k8s-delete
-```
-
-## API Endpoints
+## API Documentation
 
 #### For complete API documentation, refer to the [Swagger UI](http://localhost/api/v1/docs/).
 
@@ -310,5 +248,166 @@ GET /api/v1/conversations/ # List conversations
 GET /api/v1/conversations/<user_id>/messages/ # Get messages
 POST /api/v1/conversations/<user_id>/messages/ # Send message
 ```
+
+## Kubernetes Deployment
+
+Deploying the Light Messages Backend on Kubernetes allows for scalable and resilient application management. This section guides you through setting up and deploying the application using Kubernetes and Minikube.
+
+### Prerequisites
+
+- **Minikube**: Runs a local Kubernetes cluster for testing. [Installation Guide](https://minikube.sigs.k8s.io/docs/start/)
+- **kubectl**: Command-line tool for Kubernetes. [Installation Guide](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
+- **Docker**: Needed for building container images. [Installation Guide](https://docs.docker.com/get-docker/)
+- **Make** (optional): Simplifies command execution using the provided Makefile. [Installation Guide](https://www.gnu.org/software/make/)
+
+### Setup Instructions
+
+1. **Start Minikube with Ingress Support**
+
+   Begin by starting Minikube and enabling the ingress addon:
+
+   ```bash
+   make minikube-start
+   ```
+
+   Or manually for the first-time setup to ensure the driver is Docker, ingress is enabled, and resources are allocated properly:
+
+   ```bash
+   minikube start --driver=docker --addons=ingress --cpus=2 --memory=4096
+   ```
+
+   *Note:* Adjust the CPU and memory settings according to your machine's specifications.
+
+2. **Set Up Environment**
+
+   Create the necessary environment files:
+
+   ```bash
+   mkdir -p k8s/overlays/local/.envs
+   touch k8s/overlays/local/.envs/.django.env
+   touch k8s/overlays/local/.envs/.postgresql.env
+   touch k8s/overlays/local/.envs/.nginx.env
+   ```
+
+3. **Update Host in `patches.yaml`**
+
+   Update the host in `k8s/overlays/local/patches.yaml` to match your local machine hostname.
+
+   Ensure to replace `light-messages.local` with your local machine hostname or add the hostname to your hosts file.
+
+   **On Windows:**
+
+   ```powershell
+   # View current hostname
+   hostname
+
+   # Add hostname to hosts file (Run as Administrator)
+   echo "127.0.0.1 light-messages.local" >> C:\Windows\System32\drivers\etc\hosts
+   ```
+
+   **On Linux/MacOS:**
+
+   ```bash
+   # View current hostname
+   hostname
+
+   # Add hostname to hosts file
+   sudo sh -c 'echo "127.0.0.1 light-messages.local" >> /etc/hosts'
+   ```
+
+### Deployment Commands
+
+Deploy the Kubernetes resources using the provided manifests:
+
+```bash
+make k8s-apply
+```
+
+### Accessing the Application
+
+Once deployed, you can access the application using the following URLs:
+
+- **Backend API**: `http://<minikube-ip>/api/v1/`
+- **Admin Interface**: `http://<minikube-ip>/admin/`
+- **WebSocket**: `ws://<minikube-ip>/ws/`
+
+### Scaling and Management
+
+To scale the application, use the following commands:
+
+```bash
+# Scale the backend deployment
+kubectl scale deployment light-messages-web --replicas=<number-of-replicas>
+
+# Scale the channels deployment
+kubectl scale deployment light-messages-channels --replicas=<number-of-replicas>
+```
+
+To view logs for the deployments:
+
+```bash
+# View logs for the backend
+make k8s-logs-web
+
+# View logs for the channels
+make k8s-logs-channels
+```
+
+Access Dashboard:
+
+```bash
+minikube dashboard
+```
+
+To delete the deployment:
+
+```bash
+make k8s-delete
+```
+
+### Deployment Diagram
+
+![Kubernetes Deployment Diagram](path/to/kubernetes-deployment-diagram.png)
+
+### Setup Instructions
+
+The Kubernetes setup provides a scalable and robust deployment suitable for production.
+
+- **Configuration Files**:
+  - **`kustomization.yaml`**: Aggregates Kubernetes manifests and applies configurations.
+  - **`ingress.yaml`**: Manages external access via Ingress resources.
+
+**Key Components**:
+
+- Deployments for the Django application, Channels worker, PostgreSQL, and Redis.
+- Services to expose deployments internally.
+- Ingress controller for external access.
+
+**Steps**:
+
+1. **Start Minikube with Ingress Support**:
+   ```bash
+   make minikube-start
+   ```
+
+2. **Deploy Application to Kubernetes**:
+   ```bash
+   make k8s-apply
+   ```
+
+3. **Access Services**:
+   - Obtain Minikube IP:
+     ```bash
+     minikube ip
+     ```
+   - API: http://<minikube-ip>/api/v1/
+   - Admin Interface: http://<minikube-ip>/admin/
+   - WebSocket: ws://<minikube-ip>/ws/
+
+**Differences from Docker Compose**:
+
+- **Scalability**: Kubernetes allows scaling of individual components horizontally.
+- **Management**: Provides advanced features like rolling updates and self-healing.
+- **Configuration**: Uses declarative manifests (`kustomization.yaml`, `ingress.yaml`) for infrastructure as code.
 
 
