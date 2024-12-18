@@ -3,35 +3,64 @@
 ## Table of Contents
 
 - [Overview](#overview)
+  - [Important Note](#important-note)
   - [Overview Docker Compose (Local Development)](#overview-docker-compose-local-development)
   - [Overview Kubernetes Minikube (Local Deployment)](#overview-kubernetes-minikube-local-deployment)
 - [Tech Stack](#tech-stack)
+  - [Backend Framework](#backend-framework)
+  - [Database & Message Broker](#database--message-broker)
+  - [Infrastructure](#infrastructure)
+  - [Development Tools](#development-tools)
 - [Architecture](#architecture)
+  - [Architectural Differences Between Docker and Kubernetes](#architectural-differences-between-docker-and-kubernetes)
+    - [Docker Compose](#docker-compose)
+    - [Kubernetes](#kubernetes)
 - [Project Setup](#project-setup)
   - [Prerequisites](#prerequisites)
   - [Environment Setup](#environment-setup)
 - [Docker Deployment](#docker-deployment)
-  - [Deployment Diagram](#deployment-diagram)
-  - [Setup Instructions](#setup-instructions)
+  - [Docker Deployment Diagram](#docker-deployment-diagram)
+  - [Docker Setup Instructions](#docker-setup-instructions)
 - [Development](#development)
   - [Running the Project](#running-the-project)
   - [Common Commands](#common-commands)
   - [Accessing Services](#accessing-services)
 - [Testing](#testing)
 - [API Documentation](#api-documentation)
+  - [Authentication](#authentication)
+  - [Users](#users)
+  - [Messages](#messages)
 - [Kubernetes Deployment](#kubernetes-deployment)
-  - [Deployment Diagram](#deployment-diagram-1)
-  - [Setup Instructions](#setup-instructions-1)
+  - [Kubernetes Deployment Diagram](#kubernetes-deployment-diagram)
+  - [Prerequisites](#prerequisites-1)
+  - [Kubernetes Setup Instructions](#kubernetes-setup-instructions)
+  - [Deployment Commands](#deployment-commands)
+  - [Accessing the Application](#accessing-the-application)
+  - [Scaling and Management](#scaling-and-management)
+
 
 ## Overview
 
-A demo backend showcasing a scalable, real-time messaging API built with Django, Docker, and Kubernetes.
+This repository features a demo backend showcasing a scalable, real-time messaging API built with **Django**, **Docker**, and **Kubernetes**. 
+
+### Important Note
+` Please note that this project is an **ongoing personal endeavor** and not yet complete.`
+
+`The primary goal is educational: to provide a hands-on tutorial that demonstrates how to implement and compare various architectures, 
+rather than to serve as a finalized production application.` More features and refinements will be added over time.
+
+> **Status: Work in Progress**  
+> - **Microservices:** Services will be modularized to better illustrate a microservices approach.  
+> - **GitOps:** CI/CD pipelines will adopt GitOps practices for automated deployments.  
+> - **Logging & Monitoring:** Comprehensive observability tooling (e.g., logging, metrics, dashboards) is planned.  
+> - **AWS Production Guide:** A detailed article for deploying on AWS in a production environment is forthcoming.
+
 
 ### Overview Docker Compose (Local Development)
-![image](./imgs/docker_compose.png)
+![image](./imgs/docker_compose_architecture.png)
 
 ### Overview Kubernetes Minikube (Local Deployment)
-- will be updated soon
+![image](./imgs/kubernetes_architecture.png)
 
 ## Tech Stack
 
@@ -116,30 +145,34 @@ touch .envs/local/.nginx.env
 3. Configure environment variables:
 ```bash
 # .envs/local/.django.env
-DJANGO_SETTINGS_MODULE=config.settings.local
-DJANGO_SECRET_KEY=<your-secret-key-here>
-DJANGO_DEBUG=True
-DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
-REDIS_URL=redis://redis:6379/0
+SECRET=your_secret_key_here
+DJANGO_SETTINGS_MODULE=light_messages.settings.local
+DEBUG=true
+ALLOWED_HOSTS=localhost,127.0.0.1
+ADMIN_URL=admin_123/
+CORS_ALLOWED_ORIGINS=http://localhost:5173,
+REDIS_HOST=redis
+REDIS_PORT=6379
 
 # .envs/local/.postgresql.env
-POSTGRES_DB=light_messages_db
-POSTGRES_USER=light_messages_user
-POSTGRES_PASSWORD=<your-db-password-here>
 POSTGRES_HOST=postgres
 POSTGRES_PORT=5432
+POSTGRES_DB=light_messages_db
+POSTGRES_USER=light_messages_user
+POSTGRES_PASSWORD=Pass123456
+DATABASE_URL=postgres://light_messages_user:Pass123456@postgres:5432/light_messages_db
 
 # .envs/local/.nginx.env
-ADMIN_PATH=admin
+ADMIN_PATH=admin_123
 ```
 
 ## Docker Deployment
 
-### Deployment Diagram
+### Docker Deployment Diagram
 
-![Docker Deployment Diagram](path/to/docker-deployment-diagram.png)
+![Docker Deployment Diagram](./imgs/docker_compose_architecture.png)
 
-### Setup Instructions
+### Docker Setup Instructions
 
 The Docker Compose setup is designed for easy local development.
 
@@ -226,7 +259,7 @@ make pytest path=tests/test_file.py
 
 ## API Documentation
 
-#### For complete API documentation, refer to the [Swagger UI](http://localhost/api/v1/docs/).
+#### For complete API documentation, refer to the [Swagger UI](http://localhost/api/v1/docs/) after running the project.
 
 ### Authentication
 ```bash
@@ -253,6 +286,9 @@ POST /api/v1/conversations/<user_id>/messages/ # Send message
 
 Deploying the Light Messages Backend on Kubernetes allows for scalable and resilient application management. This section guides you through setting up and deploying the application using Kubernetes and Minikube.
 
+### Kubernetes Deployment Diagram
+![Kubernetes Deployment Diagram](./imgs/kubernetes_architecture.png)
+
 ### Prerequisites
 
 - **Minikube**: Runs a local Kubernetes cluster for testing. [Installation Guide](https://minikube.sigs.k8s.io/docs/start/)
@@ -260,7 +296,7 @@ Deploying the Light Messages Backend on Kubernetes allows for scalable and resil
 - **Docker**: Needed for building container images. [Installation Guide](https://docs.docker.com/get-docker/)
 - **Make** (optional): Simplifies command execution using the provided Makefile. [Installation Guide](https://www.gnu.org/software/make/)
 
-### Setup Instructions
+### Kubernetes Setup Instructions
 
 1. **Start Minikube with Ingress Support**
 
@@ -288,6 +324,30 @@ Deploying the Light Messages Backend on Kubernetes allows for scalable and resil
    touch k8s/overlays/local/.envs/.postgresql.env
    touch k8s/overlays/local/.envs/.nginx.env
    ```
+  Fill the environment files with the following content:
+
+  ```bash
+  # k8s/overlays/local/.envs/.django.env
+  SECRET=your_secret_key_here
+  DJANGO_SETTINGS_MODULE=light_messages.settings.local
+  ALLOWED_HOSTS=*
+  DEBUG=true
+  ADMIN_URL=admin_123/
+  CORS_ALLOWED_ORIGINS=http://localhost:5173,
+  REDIS_HOST=redis-service
+  REDIS_PORT=6379
+
+  # k8s/overlays/local/.envs/.postgresql.env
+  POSTGRES_HOST=postgres-service
+  POSTGRES_PORT=5432
+  POSTGRES_DB=light_messages_db
+  POSTGRES_USER=light_messages_user
+  POSTGRES_PASSWORD=Pass123456
+  DATABASE_URL=postgres://light_messages_user:Pass123456@postgres-service:5432/light_messages_db
+
+  # k8s/overlays/local/.envs/.nginx.env
+  ADMIN_PATH=admin_123
+  ```
 
 3. **Update Host in `patches.yaml`**
 
@@ -365,10 +425,6 @@ To delete the deployment:
 make k8s-delete
 ```
 
-### Deployment Diagram
-
-![Kubernetes Deployment Diagram](path/to/kubernetes-deployment-diagram.png)
-
 ### Setup Instructions
 
 The Kubernetes setup provides a scalable and robust deployment suitable for production.
@@ -400,9 +456,9 @@ The Kubernetes setup provides a scalable and robust deployment suitable for prod
      ```bash
      minikube ip
      ```
-   - API: http://<minikube-ip>/api/v1/
-   - Admin Interface: http://<minikube-ip>/admin/
-   - WebSocket: ws://<minikube-ip>/ws/
+   - API: http://minikube-ip/api/v1/
+   - Admin Interface: http://minikube-ip/admin/
+   - WebSocket: ws://minikube-ip/ws/
 
 **Differences from Docker Compose**:
 
