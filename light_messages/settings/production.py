@@ -4,6 +4,8 @@ from .base import env
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
+INSTALLED_APPS += ["storages"]
+
 STORAGES = {
     "default": {
         "BACKEND": "storages.backends.s3.S3Storage",
