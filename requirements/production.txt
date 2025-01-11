@@ -1,3 +1,4 @@
 -r base.txt
-django-storages[s3]
 gunicorn==23.0.0
+django-storages[s3]
+boto3
