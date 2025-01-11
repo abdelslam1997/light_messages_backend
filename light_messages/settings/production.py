@@ -13,6 +13,8 @@ STORAGES = {
             "access_key": env.str("AWS_S3_ACCESS_KEY_ID"),
             "secret_key": env.str("AWS_S3_SECRET_ACCESS_KEY"),
             "bucket_name": env.str("AWS_STORAGE_BUCKET_NAME"),
+            "region_name": "eu-west-2",
+            "signature_version": "s3v4",
         },
     },
     "staticfiles": {
@@ -22,6 +24,8 @@ STORAGES = {
             "secret_key": env.str("AWS_S3_SECRET_ACCESS_KEY"),
             "bucket_name": env.str("AWS_STORAGE_BUCKET_NAME"),
             "location": "static",
+            "region_name": "eu-west-2",
+            "signature_version": "s3v4",
         },
     },
 }
