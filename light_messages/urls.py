@@ -28,6 +28,8 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 
+from .health import health_check
+
 
 schema_view = get_schema_view(
    openapi.Info(
@@ -56,6 +58,8 @@ urlpatterns = [
     path("api/v1/conversations/", include("core_apps.messenger.urls")),
     # Swagger | docs URLs
     path("api/v1/docs/", schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+    # Health Check URL
+    path("api/v1/health/", health_check, name="health_check"),
 ]
 
 
