@@ -68,21 +68,27 @@ class MessageConsumer(AsyncWebsocketConsumer):
         Periodically send a ping message to the client and 
         check if a pong is received. If not, close the connection.
         """
-        self.last_pong_time = asyncio.get_event_loop().time()
+        try:
+            self.last_pong_time = asyncio.get_event_loop().time()
 
-        while True:
-            # Send a "ping" message
-            await self.send(text_data=json.dumps({"type": "ping"}))
-            
-            # Wait PONG_TIMEOUT seconds for a pong response
-            await asyncio.sleep(self.PONG_TIMEOUT)
+            while True:
+                try:
+                    # Send a "ping" message
+                    await self.send(text_data=json.dumps({"type": "ping"}))
+                    
+                    # Wait for potential pong response
+                    await asyncio.sleep(self.PONG_TIMEOUT)
 
-            # Check time since last pong
-            time_since_pong = asyncio.get_event_loop().time() - self.last_pong_time
-            if time_since_pong > self.PONG_TIMEOUT:
-                # No pong response in time, close the connection
-                await self.close()
-                break
-            
-            # If we did get a pong in time, wait until the next ping interval
-            await asyncio.sleep(self.PING_INTERVAL - self.PONG_TIMEOUT)
+                    # Check time since last pong
+                    current_time = asyncio.get_event_loop().time()
+                    if (current_time - self.last_pong_time) > self.PONG_TIMEOUT:
+                        await self.close()
+                        break
+                    
+                    # Wait for next ping interval
+                    await asyncio.sleep(max(0, self.PING_INTERVAL - self.PONG_TIMEOUT))
+                except Exception as e:
+                    await self.close()
+                    break
+        except Exception:
+            await self.close()

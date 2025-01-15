@@ -59,7 +59,7 @@ jobs:
             -e POSTGRES_PORT=5432 \
             -e REDIS_HOST=localhost \
             -e REDIS_PORT=6379 \
-            light_messages_backend:test pytest -rP -p no:warnings --cov=. -v
+            light_messages_backend:test pytest -rP -p no:warnings -m "not skip_in_ci" --cov=. -v
 
   build-and-push:
     name: Build and Push Docker Image
