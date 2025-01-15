@@ -6,10 +6,66 @@ on:
       - main
 
 jobs:
+  test:
+    name: Run Tests with Local Dockerfile
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16.2-bookworm
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        # Add container healthcheck
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:6-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build and Run Tests
+        run: |
+          # Create a Docker network
+          docker network create test-network
+
+          # Build the production Dockerfile with the local environment configuration
+          docker build -f docker/local/django/Dockerfile --build-arg ENVIRONMENT=local -t light_messages_backend:test .
+          
+          # Run the container and inject the necessary environment variables
+          docker run --rm \
+            --network host \
+            -e SECRET=secret_123_321 \
+            -e ALLOWED_HOSTS=localhost \
+            -e DEBUG=True \
+            -e ADMIN_URL=admin/ \
+            -e CORS_ALLOWED_ORIGINS=http://localhost:3000 \
+            -e DATABASE_URL=postgres://test_user:test_password@localhost:5432/test_db \
+            -e POSTGRES_DB=test_db \
+            -e POSTGRES_USER=test_user \
+            -e POSTGRES_PASSWORD=test_password \
+            -e POSTGRES_HOST=localhost \
+            -e POSTGRES_PORT=5432 \
+            -e REDIS_HOST=localhost \
+            -e REDIS_PORT=6379 \
+            light_messages_backend:test pytest -rP -p no:warnings --cov=. -v
+
   build-and-push:
     name: Build and Push Docker Image
     # Only run this job if the commit message contains 'build-docker-image'
     if: ${{ contains(github.event.head_commit.message, 'build-docker-image') }}
+    needs: test
     # GitHub-hosted runner
     runs-on: ubuntu-latest
 
