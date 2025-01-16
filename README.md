@@ -3,7 +3,6 @@
 ## Table of Contents
 
 - [Overview](#overview)
-  - [Important Note](#important-note)
   - [Overview Docker Compose (Local Development)](#overview-docker-compose-local-development)
   - [Overview Kubernetes Minikube (Local Deployment)](#overview-kubernetes-minikube-local-deployment)
 - [Tech Stack](#tech-stack)
@@ -43,17 +42,8 @@
 
 This repository features a demo backend showcasing a scalable, real-time messaging API built with **Django**, **Docker**, and **Kubernetes**. 
 
-### Important Note
-` Please note that this project is an **ongoing personal endeavor** and not yet complete.`
-
-`The primary goal is educational: to provide a hands-on tutorial that demonstrates how to implement and compare various architectures, 
-rather than to serve as a finalized production application.` More features and refinements will be added over time.
-
-> **Status: Work in Progress**  
-> - **Microservices:** Services will be modularized to better illustrate a microservices approach.  
-> - **GitOps:** CI/CD pipelines will adopt GitOps practices for automated deployments.  
-> - **Logging & Monitoring:** Comprehensive observability tooling (e.g., logging, metrics, dashboards) is planned.  
-> - **AWS Production Guide:** A detailed article for deploying on AWS in a production environment is forthcoming.
+- **`Frontend Repository:`** [Light Messages Frontend](https://github.com/abdelslam1997)
+- **`IaC Repository:`** [Light Messages IaC](https://github.com/abdelslam1997/light_messages_iac) `(Infrastructure as Code to deploy on AWS)`
 
 
 ### Overview Docker Compose (Local Development)
