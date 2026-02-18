@@ -59,6 +59,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "light_messages.middleware.api_logging.ApiRequestLoggingMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -186,3 +187,48 @@ AUTH_USER_MODEL = "users.LightMessagesUser"
 
 # Admin URL
 ADMIN_URL = env("ADMIN_URL", default="admin/")
+
+
+LOG_LEVEL = env("LOG_LEVEL", default="INFO")
+API_LOG_INCLUDE_PREFIXES = env.list("API_LOG_INCLUDE_PREFIXES", default=["/api/v1/"])
+API_LOG_EXCLUDE_PREFIXES = env.list(
+    "API_LOG_EXCLUDE_PREFIXES",
+    default=["/api/v1/docs/", "/api/v1/health/", "/static/", "/media/"],
+)
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "json": {
+            "()": "light_messages.logging_utils.JsonFormatter",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "json",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": LOG_LEVEL,
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": LOG_LEVEL,
+            "propagate": False,
+        },
+        "light_messages.websocket": {
+            "handlers": ["console"],
+            "level": LOG_LEVEL,
+            "propagate": False,
+        },
+        "light_messages.http": {
+            "handlers": ["console"],
+            "level": LOG_LEVEL,
+            "propagate": False,
+        },
+    },
+}
