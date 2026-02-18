@@ -62,8 +62,21 @@ urlpatterns = [
     path("api/v1/health/", health_check, name="health_check"),
 ]
 
+print("Silk Values: ",
+      getattr(settings, "ENABLE_SILK", False),
+      getattr(settings, "SILK_URL_PREFIX", "N/A"),
+      getattr(settings, "API_LOG_EXCLUDE_PREFIXES", []),
+)
+### Optional Silk profiling URLs (only enabled if ENABLE_SILK is True in settings)
+if getattr(settings, "ENABLE_SILK", False):
+    urlpatterns += [
+        path(
+            f"{getattr(settings, 'SILK_URL_PREFIX', 'silk').strip('/')}/", include("silk.urls", namespace="silk")
+        ),
+    ]
 
-# Add Media & Static URLs -- Now served by Nginx
+
+### Add Media & Static URLs -- Now served by Nginx
 # if settings.DEBUG:
 #     from django.conf.urls.static import static
 #     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
