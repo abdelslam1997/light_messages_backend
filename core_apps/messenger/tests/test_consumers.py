@@ -48,8 +48,10 @@ class TestMessageConsumer:
         """Helper method to safely disconnect communicator"""
         try:
             await communicator.disconnect()
-        except Exception:
-            pass
+        except asyncio.CancelledError:
+            print("Communicator disconnect was cancelled")
+        except BaseException as e:
+            print(f"Exception during disconnect: {e}")
 
     @pytest.mark.django_db(transaction=True)
     async def test_authentication_required(self):
