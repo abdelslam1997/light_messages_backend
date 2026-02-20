@@ -100,7 +100,6 @@ class MessageConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps(event))
 
     async def read_message(self, event):
-        print('read_message event received:', event)
         # Send message to WebSocket
         await self.send(text_data=json.dumps(event))
 

@@ -25,19 +25,19 @@ class MessageCreateSerializer(serializers.ModelSerializer):
 
 
 class MessageDetailSerializer(serializers.ModelSerializer):
-    sender = serializers.SlugRelatedField(
-        slug_field='id',
-        read_only=True
-    )
-    receiver = serializers.SlugRelatedField(
-        slug_field='id',
-        read_only=True
-    )
+    sender = serializers.SerializerMethodField()
+    receiver = serializers.SerializerMethodField()
 
     class Meta:
         model = Message
         fields = ['id', 'sender', 'receiver', 'message', 'timestamp', 'read']
         read_only_fields = ['id', 'sender', 'receiver', 'timestamp', 'read']
+
+    def get_sender(self, obj):
+        return obj.sender_id
+    
+    def get_receiver(self, obj):
+        return obj.receiver_id
 
 
 class ConversationSerializer(serializers.Serializer):

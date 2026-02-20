@@ -1,3 +1,5 @@
+import logging
+
 from django.db.models.signals import post_save
 from django.dispatch import receiver, Signal
 from asgiref.sync import async_to_sync
@@ -5,8 +7,12 @@ from channels.layers import get_channel_layer
 
 from .models import Message
 
+logger = logging.getLogger("light_messages.signals")
+
 # Define message read signal
 messages_read = Signal()
+
+logging
 
 @receiver(post_save, sender=Message)
 def send_websocket_notification(sender, instance, created, **kwargs):
@@ -29,25 +35,31 @@ def send_websocket_notification(sender, instance, created, **kwargs):
 
 
 @receiver(messages_read)
-def send_read_message_notification(sender, reader_id, sender_id, last_message, **kwargs):
-    print('send_read_message_notification called')
+def send_read_message_notification(sender, reader_id, sender_id, last_message_id, **kwargs):
     try:
         channel_layer = get_channel_layer()
         if channel_layer is None:
-            print('Channel layer is None')
             return
         sender_group_name = f"user_{sender_id}"
         message_data = {
             'type': 'read_message',
             'message': {
-                'last_read_message_id': last_message.id,
+                'last_read_message_id': last_message_id,
                 'reader_id': reader_id,
             }
         }
-        print('Sending read message notification:', message_data)
         async_to_sync(channel_layer.group_send)(
             sender_group_name,
             message_data
         )
     except Exception as e:
-        print('Exception in send_read_message_notification:', e)
+        logger.error(
+            "error_sending_read_message_notification",
+            extra={
+                "event": "error_sending_read_message_notification",
+                "reader_id": reader_id,
+                "sender_id": sender_id,
+                "last_message_id": last_message_id,
+                "error": str(e),
+            },
+        )

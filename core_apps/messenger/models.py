@@ -51,7 +51,18 @@ class Message(models.Model):
             ),
             models.Index(
                 fields=["receiver", "sender", "read"],
-            )
+            ),
+            # Covering indexes for conversation list (index-only scan)
+            models.Index(
+                fields=["sender", "conversation_id"],
+                include=["id"],
+                name="sender_conv_covering_idx"
+            ),
+            models.Index(
+                fields=["receiver", "conversation_id"],
+                include=["id"],
+                name="receiver_conv_covering_idx"
+            ),
         ]
 
     def save(self, *args, **kwargs):

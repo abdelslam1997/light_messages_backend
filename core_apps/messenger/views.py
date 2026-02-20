@@ -3,7 +3,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 
-from django.db.models import Q
+from django.db.models import Max, Prefetch, Q
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
 
@@ -66,8 +66,8 @@ class ConversationMessageListCreateView(generics.ListCreateAPIView):
         ''' Emit the read signal to the sender of the messages '''
         # Prepare queryset to get the last message that was read
         read_updated_qs = queryset.filter(sender_id=sender_id, read=False)
-        last_message = read_updated_qs.first()
-        if last_message is None:
+        last_message_id = read_updated_qs.values_list('id', flat=True).first()
+        if last_message_id is None:
             return False
         # Mark all previous messages as read
         read_updated_qs.update(read=True)
@@ -76,7 +76,7 @@ class ConversationMessageListCreateView(generics.ListCreateAPIView):
             sender=self.__class__,
             reader_id=reader_id,
             sender_id=sender_id,
-            last_message=last_message
+            last_message_id=last_message_id
         )
         return True
 
@@ -89,17 +89,34 @@ class ConversationListView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        return Message.objects.select_related(
-            'receiver', 
-            'sender'
-        ).filter(
-            Q(sender=user) | Q(receiver=user)
-        ).distinct(
-            'conversation_id'
-        ).order_by(
-            'conversation_id',
-            '-timestamp'
+
+        # Phase 1: Thin GROUP BY — get (conversation_id → latest msg id)
+        # Uses HashAggregate, no sort, minimal data per row
+        sent = dict(
+            Message.objects.filter(sender=user)
+            .values('conversation_id')
+            .annotate(latest_id=Max('id'))
+            .values_list('conversation_id', 'latest_id')
         )
+        received = dict(
+            Message.objects.filter(receiver=user)
+            .values('conversation_id')
+            .annotate(latest_id=Max('id'))
+            .values_list('conversation_id', 'latest_id')
+        )
+
+        # Phase 2: Merge — keep the highest id per conversation (higher id = newer)
+        msg_ids = [
+            max(sent.get(cid, 0), received.get(cid, 0))
+            for cid in set(sent) | set(received)
+        ]
+
+        # Phase 3: Fetch only the winning messages with slim user data
+        slim_user_qs = User.objects.only('id', 'first_name', 'profile_image')
+        return Message.objects.prefetch_related(
+            Prefetch('sender', queryset=slim_user_qs),
+            Prefetch('receiver', queryset=slim_user_qs),
+        ).filter(id__in=msg_ids).order_by('-timestamp')
 
     def list(self, request, *args, **kwargs):
         queryset = self.paginate_queryset(self.get_queryset())

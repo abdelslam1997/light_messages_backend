@@ -62,11 +62,7 @@ urlpatterns = [
     path("api/v1/health/", health_check, name="health_check"),
 ]
 
-print("Silk Values: ",
-      getattr(settings, "ENABLE_SILK", False),
-      getattr(settings, "SILK_URL_PREFIX", "N/A"),
-      getattr(settings, "API_LOG_EXCLUDE_PREFIXES", []),
-)
+
 ### Optional Silk profiling URLs (only enabled if ENABLE_SILK is True in settings)
 if getattr(settings, "ENABLE_SILK", False):
     urlpatterns += [

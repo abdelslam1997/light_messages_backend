@@ -49,7 +49,7 @@ class ApiRequestLoggingMiddleware:
         start_time = time.perf_counter()
         try:
             response = self.get_response(request)
-        except Exception:
+        except Exception as e:
             duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
             logger.exception(
                 "http_request_exception",
@@ -61,6 +61,7 @@ class ApiRequestLoggingMiddleware:
                     "duration_ms": duration_ms,
                     "client_ip": self._client_ip(request),
                     "user_id": request.user.id if self._is_authenticated_user(request) else None,
+                    "error": str(e),
                 },
             )
             raise

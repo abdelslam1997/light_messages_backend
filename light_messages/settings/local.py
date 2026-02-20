@@ -31,7 +31,7 @@ SILKY_AUTHENTICATION = env.bool("SILKY_AUTHENTICATION", default=True)
 SILKY_AUTHORISATION = env.bool("SILKY_AUTHORISATION", default=True)
 SILKY_META = env.bool("SILKY_META", default=True)
 SILKY_ANALYZE_QUERIES = env.bool("SILKY_ANALYZE_QUERIES", default=True)
-SILKY_INTERCEPT_PERCENT = env.int("SILKY_INTERCEPT_PERCENT", default=20)
+SILKY_INTERCEPT_PERCENT = env.int("SILKY_INTERCEPT_PERCENT", default=100)
 
 # Ensure these directories are created and writable
 os.makedirs(STATIC_ROOT, exist_ok=True) # noqa: F405
