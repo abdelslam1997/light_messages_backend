@@ -1,4 +1,4 @@
-DOCKER_COMPOSE = docker compose -f local_docker_compose.yml
+DOCKER_COMPOSE = docker compose
 SERVICE = light_messages_backend
 path = .
 

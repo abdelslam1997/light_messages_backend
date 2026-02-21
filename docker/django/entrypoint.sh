@@ -24,7 +24,6 @@ sys.exit(0)
 END
 }
 
-# Uncomment the wait loop for database
 until check_postgres; do
   echo "Waiting for database connection..."
   sleep 2

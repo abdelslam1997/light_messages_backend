@@ -97,7 +97,7 @@ The project architecture consists of the following components:
 
 - **Docker Compose**:
   - Suitable for local development and testing.
-  - Uses `local_docker_compose.yml`, `Dockerfile`, and `nginx.conf.template` for configuration.
+  - Uses `docker-compose.yml`, `docker/django/Dockerfile`, and `docker/nginx/nginx.conf.template` for configuration.
   - All services run in a single host environment.
   - Easier setup but limited in scalability.
 
@@ -167,9 +167,9 @@ ADMIN_PATH=admin_123
 The Docker Compose setup is designed for easy local development.
 
 - **Configuration Files**:
-  - **`local_docker_compose.yml`**: Defines services, volumes, and networks.
-  - **`Dockerfile`**: Specifies how to build the Docker image for the Django application.
-  - **`nginx.conf.template`**: Configures Nginx within the Docker container.
+  - **`docker-compose.yml`**: Defines services, volumes, and networks.
+  - **`docker/django/Dockerfile`**: Specifies how to build the Docker image for the Django application.
+  - **`docker/nginx/nginx.conf.template`**: Configures Nginx within the Docker container.
 
 **Steps**:
 

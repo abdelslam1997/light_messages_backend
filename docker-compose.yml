@@ -2,7 +2,9 @@ services:
   light_messages_backend:
     build:
       context: .
-      dockerfile: ./docker/local/django/Dockerfile
+      dockerfile: ./docker/django/Dockerfile
+      args:
+        ENVIRONMENT: local
     volumes:
       - .:/app
       - static_volume:/app/static
@@ -35,9 +37,9 @@ services:
   nginx:
     build: 
       context: .
-      dockerfile: ./docker/local/nginx/Dockerfile
+      dockerfile: ./docker/nginx/Dockerfile
     volumes:
-      - ./docker/local/nginx/nginx.conf.template:/etc/nginx/nginx.conf.template
+      - ./docker/nginx/nginx.conf.template:/etc/nginx/nginx.conf.template
       - static_volume:/app/static
       - media_volume:/app/media
     env_file:

@@ -16,7 +16,7 @@ RUN apt-get update && \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies with explicit gunicorn
+# Install Python dependencies
 COPY ./requirements ./requirements
 ARG ENVIRONMENT=production
 RUN pip wheel --no-cache-dir --no-deps --wheel-dir /build/wheels -r ./requirements/${ENVIRONMENT}.txt
@@ -46,18 +46,15 @@ RUN pip install --no-cache-dir /wheels/* \
 # Copy the application code
 COPY . /app
 
-
 # Copy and prepare entry point scripts
-ARG ENVIRONMENT=production
-COPY ./docker/${ENVIRONMENT}/django/entrypoint.sh /entrypoint.sh
-COPY ./docker/${ENVIRONMENT}/django/start.sh /start.sh
+COPY ./docker/django/entrypoint.sh /entrypoint.sh
+COPY ./docker/django/start.sh /start.sh
 
 # Fix line endings and make scripts executable
 RUN sed -i 's/\r$//g' /entrypoint.sh \
     && sed -i 's/\r$//g' /start.sh \
     && chmod +x /entrypoint.sh \
     && chmod +x /start.sh
-
 
 # Set the entry point
 ENTRYPOINT ["/entrypoint.sh"]

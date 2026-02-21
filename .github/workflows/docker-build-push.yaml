@@ -7,7 +7,7 @@ on:
 
 jobs:
   test:
-    name: Run Tests with Local Dockerfile
+    name: Run Tests with Canonical Dockerfile
     runs-on: ubuntu-latest
 
     services:
@@ -40,8 +40,8 @@ jobs:
           # Create a Docker network
           docker network create test-network
 
-          # Build the production Dockerfile with the local environment configuration
-          docker build -f docker/local/django/Dockerfile --build-arg ENVIRONMENT=local -t light_messages_backend:test .
+          # Build the canonical Dockerfile with local environment dependencies
+          docker build -f docker/django/Dockerfile --build-arg ENVIRONMENT=local -t light_messages_backend:test .
           
           # Run the container and inject the necessary environment variables
           docker run --rm \
@@ -90,7 +90,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: docker/production/django/Dockerfile  # Path to your Dockerfile
+          file: docker/django/Dockerfile # Path to the Dockerfile
           push: true
           tags: |
             abdelslam1997/light_messages_backend:latest
