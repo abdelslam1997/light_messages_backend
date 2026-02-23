@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - ../../base
   - storage/shared-storage-pvc.yaml
+  - storage/postgres-data-pvc.yaml
 
 configMapGenerator:
   - name: ingress-config
@@ -43,6 +44,12 @@ patches:
       version: v1
       kind: Ingress
       name: light-messages-ingress
+  - path: patches/postgres-deployment.yaml
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: postgres
 
 replacements:
   - source:

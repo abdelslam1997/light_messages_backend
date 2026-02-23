@@ -498,11 +498,32 @@ To delete the deployment:
 make k8s-delete
 ```
 
+This is a safe delete and keeps persistent volumes (including PostgreSQL data PVC).
+
+Or without `make`:
+
+```bash
+kubectl delete ingress light-messages-ingress --ignore-not-found=true
+kubectl delete deployment light-messages-web light-messages-channels static-file-server postgres redis --ignore-not-found=true
+kubectl delete service backend-service-web channels-service static-file-server postgres redis --ignore-not-found=true
+kubectl delete configmap ingress-config --ignore-not-found=true
+kubectl delete secret backend-secret --ignore-not-found=true
+kubectl get all
+kubectl get pvc
+```
+
+To delete everything from the local overlay including PVCs:
+
+```bash
+make k8s-delete-all
+```
+
 Or without `make`:
 
 ```bash
 kubectl kustomize --load-restrictor LoadRestrictionsNone k8s/overlays/local | kubectl delete -f -
 kubectl get all
+kubectl get pvc
 ```
 
 **Differences from Docker Compose**:

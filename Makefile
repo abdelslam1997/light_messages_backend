@@ -87,11 +87,19 @@ k8s-apply:
 	kubectl get all
 
 k8s-delete:
+	kubectl delete ingress light-messages-ingress --ignore-not-found=true
+	kubectl delete deployment light-messages-web light-messages-channels static-file-server postgres redis --ignore-not-found=true
+	kubectl delete service backend-service-web channels-service static-file-server postgres redis --ignore-not-found=true
+	kubectl delete configmap ingress-config --ignore-not-found=true
+	kubectl delete secret backend-secret --ignore-not-found=true
+	kubectl get all
+	kubectl get pvc
+
+### Delete all resources in the cluster (including pvc) ###
+k8s-delete-all:
 	kubectl kustomize --load-restrictor LoadRestrictionsNone k8s/overlays/local | kubectl delete -f -
 	kubectl get all
-
-k8s-delete-all:
-	kubectl delete all --all
+	kubectl get pvc
 
 k8s-ingress-controller:
 	kubectl get pods -n ingress-nginx
