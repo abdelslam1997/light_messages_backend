@@ -73,18 +73,21 @@ minikube-restart:
 minikube-dashboard:
 	minikube dashboard
 
+# Build local image with minikube
+minikube-build:
+	minikube image build -t light_messages_backend:local -f docker/django/Dockerfile --build-opt build-arg=ENVIRONMENT=local .
+
 ## Kubernetes (kubectl) ##
 k8s-reapply:
-	kubectl delete -k k8s/overlays/local
-	kubectl apply -k k8s/overlays/local
-	kubectl get all
+	$(MAKE) k8s-delete
+	$(MAKE) k8s-apply
 
 k8s-apply:
-	kubectl apply -k k8s/overlays/local
+	kubectl kustomize --load-restrictor LoadRestrictionsNone k8s/overlays/local | kubectl apply -f -
 	kubectl get all
 
 k8s-delete:
-	kubectl delete -k k8s/overlays/local
+	kubectl kustomize --load-restrictor LoadRestrictionsNone k8s/overlays/local | kubectl delete -f -
 	kubectl get all
 
 k8s-delete-all:

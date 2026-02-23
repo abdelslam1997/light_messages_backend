@@ -2,8 +2,15 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - light_messages_web/deployment.yaml
-  - light_messages_web/service.yaml
-  - light_messages_channels/deployment.yaml
-  - light_messages_channels/service.yaml
+  - backend/deployment.yaml
+  - backend/service.yaml
+  - channels/deployment.yaml
+  - channels/service.yaml
   - ingress/ingress.yaml
+  - postgres/deployment.yaml
+  - postgres/service.yaml
+  - redis/deployment.yaml
+  - redis/service.yaml
+  - static/deployment.yaml
+  - static/service.yaml
+

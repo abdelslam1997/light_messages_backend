@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: light-messages-web
+spec:
+  template:
+    spec:
+      containers:
+        - name: backend-web
+          command: ["/bin/sh", "-c", "/start.sh"]
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - secretRef:
+                name: backend-secret
+          volumeMounts:
+            - name: shared-storage
+              mountPath: /app/static
+              subPath: static
+            - name: shared-storage
+              mountPath: /app/media
+              subPath: media
+      volumes:
+        - name: shared-storage
+          persistentVolumeClaim:
+            claimName: shared-storage-pvc

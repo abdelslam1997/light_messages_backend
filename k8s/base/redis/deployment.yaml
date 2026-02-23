@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: redis
-  namespace: default
   labels:
     app: redis
 spec:
@@ -17,16 +16,18 @@ spec:
     spec:
       containers:
         - name: redis
-          image: redis:latest
+          image: redis:6-alpine
           ports:
-            - containerPort: 6379
+            - name: redis
+              containerPort: 6379
+              protocol: TCP
           resources:
             requests:
-              cpu: 100m
-              memory: 128Mi
+              cpu: "100m"
+              memory: "128Mi"
             limits:
-              cpu: 250m
-              memory: 256Mi
+              cpu: "250m"
+              memory: "256Mi"
           volumeMounts:
             - name: redis-data
               mountPath: /data

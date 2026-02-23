@@ -179,11 +179,25 @@ The Docker Compose setup is designed for easy local development.
    make up
    ```
 
+  Or without `make`:
+
+  ```bash
+  docker compose build
+  docker compose up -d
+  ```
+
 2. **Apply Migrations and Create Superuser**:
    ```bash
    make migrate
    make create-superuser
    ```
+
+  Or without `make`:
+
+  ```bash
+  docker compose run --rm light_messages_backend python manage.py migrate
+  docker compose run --rm light_messages_backend python manage.py createsuperuser
+  ```
 
 3. **Access Services**:
    - API: http://localhost/api/v1/
@@ -199,18 +213,42 @@ Start all services:
 make up
 ```
 
+Or without `make`:
+
+```bash
+docker compose up -d
+```
+
 Make Migrations:
 ```bash
 make makemigrations
+```
+
+Or without `make`:
+
+```bash
+docker compose run --rm light_messages_backend python manage.py makemigrations
 ```
 Run database migrations:
 ```bash
 make migrate
 ```
 
+Or without `make`:
+
+```bash
+docker compose run --rm light_messages_backend python manage.py migrate
+```
+
 Create superuser:
 ```bash
 make create-superuser
+```
+
+Or without `make`:
+
+```bash
+docker compose run --rm light_messages_backend python manage.py createsuperuser
 ```
 
 ### Common Commands
@@ -226,6 +264,25 @@ make terminal
 
 # Access Redis CLI
 make redis-cli
+```
+
+Or without `make`:
+
+```bash
+# Rebuild all services
+docker compose down
+docker compose build
+docker compose up -d
+docker compose logs -f
+
+# Stop services
+docker compose down
+
+# Access backend terminal
+docker compose exec light_messages_backend bash
+
+# Access Redis CLI
+docker compose exec redis redis-cli
 ```
 
 ### Accessing Services
@@ -245,6 +302,19 @@ make pytest-html
 
 # Test specific path
 make pytest path=tests/test_file.py
+```
+
+Or without `make`:
+
+```bash
+# Run all tests
+docker compose run --rm light_messages_backend pytest -rP -p no:warnings --cov=. -v
+
+# Generate HTML report
+docker compose run --rm light_messages_backend pytest -p no:warnings --cov=. --cov-report html
+
+# Test specific path
+docker compose run --rm light_messages_backend pytest -rP -p no:warnings --cov=. -v tests/test_file.py
 ```
 
 ## API Documentation
@@ -296,6 +366,14 @@ Deploying the Light Messages Backend on Kubernetes allows for scalable and resil
    make minikube-start
    ```
 
+  Or without `make`:
+
+  ```bash
+  minikube start
+  minikube addons enable ingress
+  minikube tunnel
+  ```
+
    Or manually for the first-time setup to ensure the driver is Docker, ingress is enabled, and resources are allocated properly:
 
    ```bash
@@ -304,66 +382,33 @@ Deploying the Light Messages Backend on Kubernetes allows for scalable and resil
 
    *Note:* Adjust the CPU and memory settings according to your machine's specifications.
 
-2. **Set Up Environment**
+2. **Use Shared Local Environment Files (Single Source of Truth)**
 
-   Create the necessary environment files:
-
-   ```bash
-   mkdir -p k8s/overlays/local/.envs
-   touch k8s/overlays/local/.envs/.django.env
-   touch k8s/overlays/local/.envs/.postgresql.env
-   touch k8s/overlays/local/.envs/.nginx.env
-   ```
-  Fill the environment files with the following content:
+  Kubernetes local overlay reuses the same environment files as Docker Compose:
 
   ```bash
-  # k8s/overlays/local/.envs/.django.env
-  SECRET=your_secret_key_here
-  DJANGO_SETTINGS_MODULE=light_messages.settings.local
-  ALLOWED_HOSTS=*
-  DEBUG=true
-  ADMIN_URL=admin_123/
-  CORS_ALLOWED_ORIGINS=http://localhost:5173,
-  REDIS_HOST=redis-service
-  REDIS_PORT=6379
-
-  # k8s/overlays/local/.envs/.postgresql.env
-  POSTGRES_HOST=postgres-service
-  POSTGRES_PORT=5432
-  POSTGRES_DB=light_messages_db
-  POSTGRES_USER=light_messages_user
-  POSTGRES_PASSWORD=Pass123456
-  DATABASE_URL=postgres://light_messages_user:Pass123456@postgres-service:5432/light_messages_db
-
-  # k8s/overlays/local/.envs/.nginx.env
-  ADMIN_PATH=admin_123
+  .envs/local/.django.env
+  .envs/local/.postgresql.env
+  .envs/local/.nginx.env
   ```
 
-3. **Update Host in `patches.yaml`**
+  Notes:
+  - `ADMIN_PATH` is read from `.envs/local/.nginx.env` and injected into ingress admin path.
+  - In local setup, ingress host is `localhost` (no custom hosts-file mapping required).
 
-   Update the host in `k8s/overlays/local/patches.yaml` to match your local machine hostname.
+3. **Build Local Backend Image for Minikube**
 
-   Ensure to replace `light-messages.local` with your local machine hostname or add the hostname to your hosts file.
+  ```bash
+  make minikube-build
+  ```
 
-   **On Windows:**
+  Or without `make`:
 
-   ```powershell
-   # View current hostname
-   hostname
+  ```bash
+  minikube image build -t light_messages_backend:local -f docker/django/Dockerfile --build-opt build-arg=ENVIRONMENT=local .
+  ```
 
-   # Add hostname to hosts file (Run as Administrator)
-   echo "127.0.0.1 light-messages.local" >> C:\Windows\System32\drivers\etc\hosts
-   ```
-
-   **On Linux/MacOS:**
-
-   ```bash
-   # View current hostname
-   hostname
-
-   # Add hostname to hosts file
-   sudo sh -c 'echo "127.0.0.1 light-messages.local" >> /etc/hosts'
-   ```
+  This builds `light_messages_backend:local` directly inside Minikube image store.
 
 ### Deployment Commands
 
@@ -373,13 +418,41 @@ Deploy the Kubernetes resources using the provided manifests:
 make k8s-apply
 ```
 
+Or without `make`:
+
+```bash
+kubectl kustomize --load-restrictor LoadRestrictionsNone k8s/overlays/local | kubectl apply -f -
+kubectl get all
+```
+
+**Why `--load-restrictor LoadRestrictionsNone`?**
+
+Kustomize is configured to reuse shared env files from `.envs/local/` (outside `k8s/overlays/local`).
+By default, Kustomize blocks loading files outside the kustomization directory, so this flag is required for local rendering in this project.
+
+To re-apply after changes:
+
+```bash
+make k8s-reapply
+```
+
+Or without `make`:
+
+```bash
+kubectl kustomize --load-restrictor LoadRestrictionsNone k8s/overlays/local | kubectl delete -f -
+kubectl kustomize --load-restrictor LoadRestrictionsNone k8s/overlays/local | kubectl apply -f -
+kubectl get all
+```
+
 ### Accessing the Application
 
 Once deployed, you can access the application using the following URLs:
 
-- **Backend API**: `http://<minikube-ip>/api/v1/`
-- **Admin Interface**: `http://<minikube-ip>/admin/`
-- **WebSocket**: `ws://<minikube-ip>/ws/`
+- **Backend API**: `http://localhost/api/v1/`
+- **Admin Interface**: `http://localhost/admin_123/`
+- **WebSocket**: `ws://localhost/ws/`
+- **Static Files**: `http://localhost/static/`
+- **Media Files**: `http://localhost/media/`
 
 ### Scaling and Management
 
@@ -403,6 +476,16 @@ make k8s-logs-web
 make k8s-logs-channels
 ```
 
+Or without `make`:
+
+```bash
+# View logs for the backend
+kubectl logs -l app=light-messages-web
+
+# View logs for the channels
+kubectl logs -l app=light-messages-channels
+```
+
 Access Dashboard:
 
 ```bash
@@ -415,45 +498,25 @@ To delete the deployment:
 make k8s-delete
 ```
 
-### Setup Instructions
+Or without `make`:
 
-The Kubernetes setup provides a scalable and robust deployment suitable for production.
-
-- **Configuration Files**:
-  - **`kustomization.yaml`**: Aggregates Kubernetes manifests and applies configurations.
-  - **`ingress.yaml`**: Manages external access via Ingress resources.
-
-**Key Components**:
-
-- Deployments for the Django application, Channels worker, PostgreSQL, and Redis.
-- Services to expose deployments internally.
-- Ingress controller for external access.
-
-**Steps**:
-
-1. **Start Minikube with Ingress Support**:
-   ```bash
-   make minikube-start
-   ```
-
-2. **Deploy Application to Kubernetes**:
-   ```bash
-   make k8s-apply
-   ```
-
-3. **Access Services**:
-   - Obtain Minikube IP:
-     ```bash
-     minikube ip
-     ```
-   - API: http://minikube-ip/api/v1/
-   - Admin Interface: http://minikube-ip/admin/
-   - WebSocket: ws://minikube-ip/ws/
+```bash
+kubectl kustomize --load-restrictor LoadRestrictionsNone k8s/overlays/local | kubectl delete -f -
+kubectl get all
+```
 
 **Differences from Docker Compose**:
 
 - **Scalability**: Kubernetes allows scaling of individual components horizontally.
-- **Management**: Provides advanced features like rolling updates and self-healing.
-- **Configuration**: Uses declarative manifests (`kustomization.yaml`, `ingress.yaml`) for infrastructure as code.
+- **Management**: Provides rolling updates and self-healing.
+- **Configuration**: Uses declarative manifests (`kustomization.yaml`, `ingress.yaml`) and overlay-based customization.
+
+### Production Note
+
+This Kubernetes setup is intended for **local testing with Minikube**.
+
+For production-grade deployment and infrastructure (AWS/EKS, ArgoCD, secrets management, networking, and scaling), use the dedicated IaC repository:
+
+- https://github.com/abdelslam1997/light_messages_iac
 
 

@@ -3,9 +3,9 @@ kind: Ingress
 metadata:
   name: light-messages-ingress
 spec:
-  ingressClassName: nginx
   rules:
-    - http:
+    - host: localhost
+      http:
         paths:
           - path: /api/v1/
             pathType: Prefix
@@ -28,3 +28,17 @@ spec:
                 name: backend-service-web
                 port:
                   number: 8000
+          - path: /static/
+            pathType: Prefix
+            backend:
+              service:
+                name: static-file-server
+                port:
+                  number: 80
+          - path: /media/
+            pathType: Prefix
+            backend:
+              service:
+                name: static-file-server
+                port:
+                  number: 80

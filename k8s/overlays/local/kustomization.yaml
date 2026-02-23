@@ -1,33 +1,63 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-# Start from the base configuration
 resources:
   - ../../base
-  - ./postgres/deployment.yaml
-  - ./postgres/service.yaml
-  - ./postgres/storage.yaml
-  - ./redis/deployment.yaml
-  - ./redis/service.yaml
-  - ./static/static-server.yaml
-  - ./static/shared-storage.yaml
+  - storage/shared-storage-pvc.yaml
 
-# Generate Secret from your .env file
-secretGenerator:
-  - name: postgres-secret
+configMapGenerator:
+  - name: ingress-config
     envs:
-      - ./.envs/local/.postgresql.env
+      - ../../../.envs/local/.nginx.env
+
+secretGenerator:
   - name: backend-secret
     envs:
-      - ./.envs/local/.django.env
-  - name: nginx-secret
-    envs:
-      - ./.envs/local/.nginx.env
+      - ../../../.envs/local/.django.env
+      - ../../../.envs/local/.postgresql.env
 
-# Disable name suffix hashing for predictable names
 generatorOptions:
   disableNameSuffixHash: true
 
-# Apply patches to modify existing resources
-patchesStrategicMerge:
-  - patches.yaml
+images:
+  - name: abdelslam1997/light_messages_backend
+    newName: light_messages_backend
+    newTag: local
+
+patches:
+  - path: patches/backend-deployment.yaml
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: light-messages-web
+  - path: patches/channels-deployment.yaml
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: light-messages-channels
+  - path: patches/ingress.yaml
+    target:
+      group: networking.k8s.io
+      version: v1
+      kind: Ingress
+      name: light-messages-ingress
+
+replacements:
+  - source:
+      kind: ConfigMap
+      name: ingress-config
+      fieldPath: data.ADMIN_PATH
+    targets:
+      - select:
+          kind: Ingress
+          name: light-messages-ingress
+        fieldPaths:
+          - spec.rules.0.http.paths.2.path
+        options:
+          delimiter: /
+          index: 1
+
+
+

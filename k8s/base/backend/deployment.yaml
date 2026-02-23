@@ -5,7 +5,7 @@ metadata:
   labels:
     app: light-messages-web
 spec:
-  replicas: 4
+  replicas: 1
   selector:
     matchLabels:
       app: light-messages-web
@@ -21,18 +21,6 @@ spec:
             - name: http
               containerPort: 8000
               protocol: TCP
-          # readinessProbe:
-          #   httpGet:
-          #     path: /api/v1/health/
-          #     port: 8000
-          #   initialDelaySeconds: 15
-          #   periodSeconds: 10
-          # livenessProbe:
-          #   httpGet:
-          #     path: /api/v1/health/
-          #     port: 8000
-          #   initialDelaySeconds: 15
-          #   periodSeconds: 10
           resources:
             limits:
               cpu: "500m"
@@ -43,3 +31,7 @@ spec:
           env:
             - name: SERVICE_TYPE
               value: "web"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
