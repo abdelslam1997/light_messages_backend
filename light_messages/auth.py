@@ -1,3 +1,5 @@
+import logging
+
 from channels.middleware import BaseMiddleware
 from channels.db import database_sync_to_async
 from django.contrib.auth import get_user_model
@@ -5,6 +7,8 @@ from django.contrib.auth.models import AnonymousUser
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from urllib.parse import parse_qs
+
+logger = logging.getLogger("light_messages.websocket")
 
 User = get_user_model()
 
@@ -16,10 +20,12 @@ def get_user_from_token(token):
         user = User.objects.get(id=access_token.payload.get('user_id'))
         return user
     except (InvalidToken, TokenError, User.DoesNotExist) as e:
-        print(f"Token validation error: {str(e)}")
+        logger.warning("websocket_token_validation_error", extra={"error": str(e)})
         return AnonymousUser()
 
 class JwtAuthMiddleware(BaseMiddleware):
+    # TODO: Token in query string is visible in server/proxy logs.
+    #  Consider a one-time ticket exchange pattern for production.
     async def __call__(self, scope, receive, send):
         # Get query parameters
         query_string = scope.get("query_string", b"").decode()

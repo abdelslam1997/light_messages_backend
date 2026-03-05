@@ -63,6 +63,12 @@ class ConversationSerializer(serializers.Serializer):
         return self.context['request'].build_absolute_uri(profile_image) if profile_image else None
     
     def get_unread_count(self, obj):
+        # TODO: Move unread_count to a queryset annotation (Subquery + Count)
+        #  to avoid N+1 queries when serializing multiple conversations.
+        #  Or better yet, maintain an unread_count field on a dedicated
+        #  Conversation model (see models.py TODO) that gets updated
+        #  atomically on message creation and read — turning this into
+        #  a single column lookup instead of a COUNT query per row.
         return Message.objects.filter(
             receiver=self.user,
             sender_id=obj.get_other_user_id(self.user.id),

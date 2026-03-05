@@ -33,12 +33,11 @@ from .health import health_check
 
 schema_view = get_schema_view(
    openapi.Info(
-      title="Snippets API",
+      title="Light Messages API",
       default_version='v1',
-      description="Test description",
-      terms_of_service="https://www.google.com/policies/terms/",
-      contact=openapi.Contact(email="contact@snippets.local"),
-      license=openapi.License(name="BSD License"),
+      description="A scalable real-time messaging API built with Django, Channels, and PostgreSQL.",
+      contact=openapi.Contact(email="abdelslamshehab77@gmail.com"),
+      license=openapi.License(name="MIT License"),
    ),
    public=True,
    permission_classes=(permissions.AllowAny,),

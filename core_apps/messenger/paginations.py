@@ -21,5 +21,7 @@ class RecentConversationsPagination(BasePagination):
 
 
 
+# TODO: Switch to CursorPagination for message lists — PageNumberPagination's
+#  COUNT(*) becomes a bottleneck on large tables (PostgreSQL).
 class ConversationMessagesPagination(BasePagination):
     page_size = 25

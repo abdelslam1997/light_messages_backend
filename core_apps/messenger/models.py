@@ -7,6 +7,11 @@ from .utils.conversations import get_conversation_id
 User = get_user_model()
 
 
+# TODO: For a high-throughput messaging app, extract a Conversation model
+#  (e.g. conversation_id, participant_1, participant_2, last_message_id,
+#  unread_count_1, unread_count_2) so the conversation list becomes a
+#  simple indexed query instead of aggregating over the entire Message table.
+#  The current single-model design is intentionally simple for demo scope.
 class Message(models.Model):
     sender = models.ForeignKey(
         User, 

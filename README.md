@@ -55,7 +55,7 @@ This repository features a demo backend showcasing a scalable, real-time messagi
 ## Tech Stack
 
 ### Backend Framework
-- Django 5.0.x
+- Django 5.1.x
 - Django REST Framework 3.15.x
 - Django Channels 4.2.x (WebSocket support)
 - Django REST Framework SimpleJWT 5.3.x (JWT authentication)
@@ -72,15 +72,15 @@ This repository features a demo backend showcasing a scalable, real-time messagi
 - Daphne (ASGI server)
 
 ### Development Tools
-- flake8==7.0.x (linting)
-- black==24.4.x (code formatting)
-- isort==5.13.x (import sorting)
-- pytest==5.0.x (testing)
+- flake8==7.3.x (linting)
+- black==26.1.x (code formatting)
+- isort==7.0.x (import sorting)
+- pytest==9.0.x (testing)
     - pytest-cov (coverage reporting)
     - pytest-django (Django test integration)
     - pytest-asyncio (async test support)
     - pytest-factoryboy (test factories)
-- Faker==0.7.x (fake data generation)
+- Faker==40.x (fake data generation)
 
 ## Architecture
 

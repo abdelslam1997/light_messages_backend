@@ -28,6 +28,7 @@ class UserRegistrationSerializer(ModelSerializer):
     first_name = CharField(max_length=30)
     last_name = CharField(max_length=30)
 
+    # TODO: Add Django password validation (validate_password()) for production use.
     password = CharField(write_only=True)
 
     class Meta:

@@ -12,7 +12,6 @@ logger = logging.getLogger("light_messages.signals")
 # Define message read signal
 messages_read = Signal()
 
-logging
 
 @receiver(post_save, sender=Message)
 def send_websocket_notification(sender, instance, created, **kwargs):
