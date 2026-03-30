@@ -30,6 +30,9 @@ logs:
 terminal:
 	$(DOCKER_COMPOSE) exec $(SERVICE) bash
 
+shell:
+	$(DOCKER_COMPOSE) run --rm $(SERVICE) python manage.py shell
+
 create-superuser:
 	$(DOCKER_COMPOSE) run --rm $(SERVICE) python manage.py createsuperuser
 

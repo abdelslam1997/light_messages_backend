@@ -56,8 +56,8 @@ class UserSearchView(ListAPIView):
             return User.objects.none()
         # Eliminate the users that are already in conversation with the current user
         return User.objects.exclude(
-            Q(sender__receiver=self.request.user) | 
-            Q(receiver__sender=self.request.user)
+            Q(sent_messages__receiver=self.request.user) | 
+            Q(received_messages__sender=self.request.user)
         ).filter(
             Q(email__icontains=query)
         ).exclude(id=self.request.user.id)

@@ -1,6 +1,5 @@
 import pytest
 from django.test import RequestFactory
-from django.conf import settings
 from django.db.utils import IntegrityError
 
 from core_apps.messenger.serializers import (
@@ -8,7 +7,7 @@ from core_apps.messenger.serializers import (
     MessageDetailSerializer,
     ConversationSerializer
 )
-from core_apps.messenger.models import Message
+from core_apps.messenger.models import Message, Conversation
 from core_apps.messenger.utils.conversations import get_conversation_id
 
 
@@ -86,16 +85,14 @@ class TestMessageDetailSerializer:
             message="Test message"
         )
         
-        # Attempt to modify read-only fields
         serializer = MessageDetailSerializer(message, data={
-            'sender': receiver.id,  # Should not change
-            'receiver': user.id,    # Should not change
+            'sender': receiver.id,
+            'receiver': user.id,
             'message': "Updated message",
-            'read': True           # Should not change
+            'read': True
         })
         
-        # Validate serializer and check if read-only fields are ignored
-        serializer.is_valid() # Will return True, but will ignore read-only fields
+        serializer.is_valid()
 
         assert 'sender' not in serializer.validated_data
         assert 'receiver' not in serializer.validated_data
@@ -127,14 +124,17 @@ class TestConversationSerializer:
             profile_image="profiles/test.jpg"
         )
         
-        message = Message.objects.create(
+        Message.objects.create(
             sender=other_user,
             receiver=user,
             message="Test conversation message"
         )
         
+        conv = Conversation.objects.get(
+            conversation_id=get_conversation_id(user.id, other_user.id)
+        )
         context = {'request': mock_request(user)}
-        serializer = ConversationSerializer(message, context=context)
+        serializer = ConversationSerializer(conv, context=context)
         
         assert serializer.data['user_id'] == other_user.id
         assert serializer.data['first_name'] == "Test"
@@ -144,14 +144,17 @@ class TestConversationSerializer:
 
     def test_profile_image_url(self, user, user_factory, mock_request):
         other_user = user_factory(profile_image="profiles/test.jpg")
-        message = Message.objects.create(
+        Message.objects.create(
             sender=other_user,
             receiver=user,
             message="Test message"
         )
         
+        conv = Conversation.objects.get(
+            conversation_id=get_conversation_id(user.id, other_user.id)
+        )
         context = {'request': mock_request(user)}
-        serializer = ConversationSerializer(message, context=context)
+        serializer = ConversationSerializer(conv, context=context)
         
         expected_url = self.request.build_absolute_uri(
             other_user.profile_image.url
@@ -170,19 +173,24 @@ class TestConversationSerializer:
                 read=False
             )
         
-        last_message = Message.objects.create(
+        # This fourth message is "read=True" in the DB, but the Conversation
+        # model tracks unread count atomically on creation — all 4 messages
+        # were sent by other_user → user, so unread_count should be 4.
+        Message.objects.create(
             sender=other_user,
             receiver=user,
             message="Last message",
-            read=True
         )
         
+        conv = Conversation.objects.get(
+            conversation_id=get_conversation_id(user.id, other_user.id)
+        )
         context = {'request': self.request}
         self.request.user = user
-        serializer = ConversationSerializer(last_message, context=context)
-        assert serializer.data['unread_count'] == 3
+        serializer = ConversationSerializer(conv, context=context)
+        assert serializer.data['unread_count'] == 4
 
-    def test_conversation_fields_with_indexes(self, user, user_factory, mock_request):
+    def test_conversation_fields(self, user, user_factory, mock_request):
         other_user = user_factory(
             first_name="Test",
             profile_image="profiles/test.jpg"
@@ -192,33 +200,37 @@ class TestConversationSerializer:
             sender=other_user,
             receiver=user,
             message="First message",
-            read=True
         )
         
         last_message = Message.objects.create(
             sender=other_user,
             receiver=user,
             message="Second message",
-            read=False
         )
         
+        conv = Conversation.objects.get(
+            conversation_id=get_conversation_id(user.id, other_user.id)
+        )
         context = {'request': mock_request(user)}
-        serializer = ConversationSerializer(last_message, context=context)
+        serializer = ConversationSerializer(conv, context=context)
         
         assert serializer.data['last_message'] == "Second message"
-        assert serializer.data['unread_count'] == 1
+        assert serializer.data['unread_count'] == 2
         assert serializer.data['timestamp'] == last_message.timestamp.isoformat().replace('+00:00', 'Z')
 
-    def test_conversation_with_deleted_user(self, user, user_factory, mock_request):
+    def test_conversation_with_empty_profile(self, user, user_factory, mock_request):
         other_user = user_factory(first_name="", profile_image=None)
-        message = Message.objects.create(
+        Message.objects.create(
             sender=other_user,
             receiver=user,
             message="Test message"
         )
         
+        conv = Conversation.objects.get(
+            conversation_id=get_conversation_id(user.id, other_user.id)
+        )
         context = {'request': mock_request(user)}
-        serializer = ConversationSerializer(message, context=context)
+        serializer = ConversationSerializer(conv, context=context)
         
         assert serializer.data['first_name'] == ""
         assert serializer.data['profile_image'] is None

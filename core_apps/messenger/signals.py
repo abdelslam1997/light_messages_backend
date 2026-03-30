@@ -9,12 +9,13 @@ from .models import Message
 
 logger = logging.getLogger("light_messages.signals")
 
-# Define message read signal
+# Custom signal emitted when a batch of messages is marked as read
 messages_read = Signal()
 
 
 @receiver(post_save, sender=Message)
 def send_websocket_notification(sender, instance, created, **kwargs):
+    """Push a new-message event to the receiver's WebSocket group."""
     if created:
         channel_layer = get_channel_layer()
         receiver_group_name = f"user_{instance.receiver.id}"
@@ -35,6 +36,7 @@ def send_websocket_notification(sender, instance, created, **kwargs):
 
 @receiver(messages_read)
 def send_read_message_notification(sender, reader_id, sender_id, last_message_id, **kwargs):
+    """Push a read-receipt event to the original sender's WebSocket group."""
     try:
         channel_layer = get_channel_layer()
         if channel_layer is None:
