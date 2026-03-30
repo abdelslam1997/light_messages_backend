@@ -1,9 +1,8 @@
 from rest_framework import serializers
 
 from django.contrib.auth import get_user_model
-from django.conf import settings
 
-from .models import Message
+from .models import Message, Conversation
 
 
 User = get_user_model()
@@ -40,13 +39,18 @@ class MessageDetailSerializer(serializers.ModelSerializer):
         return obj.receiver_id
 
 
-class ConversationSerializer(serializers.Serializer):
+class ConversationSerializer(serializers.ModelSerializer):
     user_id = serializers.SerializerMethodField()
     first_name = serializers.SerializerMethodField()
     profile_image = serializers.SerializerMethodField()
-    last_message = serializers.CharField(source='message')
-    timestamp = serializers.DateTimeField()
+    last_message = serializers.CharField(source='last_message_text')
+    timestamp = serializers.DateTimeField(source='last_message_timestamp')
     unread_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Conversation
+        fields = ['user_id', 'first_name', 'profile_image', 'last_message', 'timestamp', 'unread_count']
+        read_only_fields = fields
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -54,27 +58,16 @@ class ConversationSerializer(serializers.Serializer):
 
     def get_user_id(self, obj):
         return obj.get_other_user_id(self.user.id)
-    
-    def get_first_name(self, obj):
-        return obj.get_other_user_first_name(self.user.id)
-    
-    def get_profile_image(self, obj):
-        profile_image = obj.get_other_user_profile_image(self.user.id)
-        return self.context['request'].build_absolute_uri(profile_image) if profile_image else None
-    
-    def get_unread_count(self, obj):
-        # TODO: Move unread_count to a queryset annotation (Subquery + Count)
-        #  to avoid N+1 queries when serializing multiple conversations.
-        #  Or better yet, maintain an unread_count field on a dedicated
-        #  Conversation model (see models.py TODO) that gets updated
-        #  atomically on message creation and read — turning this into
-        #  a single column lookup instead of a COUNT query per row.
-        return Message.objects.filter(
-            receiver=self.user,
-            sender_id=obj.get_other_user_id(self.user.id),
-            read=False
-        ).count()
 
-    class Meta:
-        fields = ['user_id', 'first_name', 'profile_image', 'last_message', 'timestamp', 'unread_count']
-        read_only_fields = fields
+    def get_first_name(self, obj):
+        other, _ = obj.get_other_user(self.user.id)
+        return other.first_name
+
+    def get_profile_image(self, obj):
+        other, _ = obj.get_other_user(self.user.id)
+        if other.profile_image:
+            return self.context['request'].build_absolute_uri(other.profile_image.url)
+        return None
+
+    def get_unread_count(self, obj):
+        return obj.get_unread_count(self.user.id)

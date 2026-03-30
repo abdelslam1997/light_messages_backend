@@ -120,7 +120,7 @@ class TestMessengerAPIs:
         response = self.client.get(self.conversation_list_url)
         
         assert response.status_code == status.HTTP_200_OK
-        assert 'count' in response.data
+        # CursorPagination returns next/previous (no count)
         assert 'next' in response.data
         assert 'previous' in response.data
         assert 'results' in response.data
@@ -140,7 +140,8 @@ class TestMessengerAPIs:
         response = self.client.get(conversation_url)
         
         assert response.status_code == status.HTTP_200_OK
-        assert 'count' in response.data
+        # CursorPagination returns next/previous (no count)
         assert 'next' in response.data
         assert 'previous' in response.data
+        assert 'results' in response.data
         assert len(response.data['results']) <= 25

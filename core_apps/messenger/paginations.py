@@ -1,5 +1,6 @@
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.pagination import PageNumberPagination, CursorPagination
 from rest_framework.response import Response
+
 
 class BasePagination(PageNumberPagination):
     page_size = 25
@@ -16,12 +17,17 @@ class BasePagination(PageNumberPagination):
         })
 
 
-class RecentConversationsPagination(BasePagination):
+class RecentConversationsPagination(CursorPagination):
+    """Cursor-based pagination for conversation lists — avoids COUNT(*)."""
     page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 50
+    ordering = '-last_message_timestamp'
 
 
-
-# TODO: Switch to CursorPagination for message lists — PageNumberPagination's
-#  COUNT(*) becomes a bottleneck on large tables (PostgreSQL).
-class ConversationMessagesPagination(BasePagination):
+class ConversationMessagesPagination(CursorPagination):
+    """Cursor-based pagination for message lists — avoids COUNT(*)."""
     page_size = 25
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+    ordering = '-timestamp'

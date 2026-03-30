@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 
 from faker import Faker
 
-from core_apps.messenger.models import Message
+from core_apps.messenger.models import Message, Conversation
 from core_apps.messenger.utils.conversations import get_conversation_id
 
 User = get_user_model()
@@ -45,7 +45,6 @@ class Command(BaseCommand):
         batch_size = options["batch_size"]
         unread_ratio = options["unread_ratio"]
 
-        # Validate users exist
         try:
             sender = User.objects.get(id=sender_id)
             receiver = User.objects.get(id=receiver_id)
@@ -54,6 +53,8 @@ class Command(BaseCommand):
             return
 
         conversation_id = get_conversation_id(sender_id, receiver_id)
+        p1_id = min(sender_id, receiver_id)
+        p2_id = max(sender_id, receiver_id)
         users = [sender, receiver]
 
         self.stdout.write(
@@ -69,7 +70,6 @@ class Command(BaseCommand):
             messages = []
 
             for _ in range(current_batch):
-                # Randomly pick sender/receiver direction
                 s, r = random.sample(users, 2)
                 messages.append(Message(
                     sender=s,
@@ -79,7 +79,6 @@ class Command(BaseCommand):
                     conversation_id=conversation_id,
                 ))
 
-            # bulk_create bypasses .save(), so conversation_id is set above
             Message.objects.bulk_create(messages, ignore_conflicts=False)
 
             created += current_batch
@@ -91,8 +90,43 @@ class Command(BaseCommand):
                 f"[{rate:,.0f} msg/s]"
             )
 
+        # Build accurate Conversation row from the final DB state
+        self._sync_conversation(conversation_id, p1_id, p2_id)
+
         elapsed = time.time() - start
         self.stdout.write(self.style.SUCCESS(
             f"\nDone! Created {created:,} messages in {elapsed:.1f}s "
             f"({created / elapsed:,.0f} msg/s)"
         ))
+
+    @staticmethod
+    def _sync_conversation(conversation_id, p1_id, p2_id):
+        """Create or update the Conversation row to match the seeded messages."""
+        last_msg = (
+            Message.objects
+            .filter(conversation_id=conversation_id)
+            .order_by('-timestamp', '-id')
+            .first()
+        )
+        if last_msg is None:
+            return
+
+        unread_p1 = Message.objects.filter(
+            conversation_id=conversation_id, receiver_id=p1_id, read=False,
+        ).count()
+        unread_p2 = Message.objects.filter(
+            conversation_id=conversation_id, receiver_id=p2_id, read=False,
+        ).count()
+
+        Conversation.objects.update_or_create(
+            conversation_id=conversation_id,
+            defaults={
+                "participant_1_id": p1_id,
+                "participant_2_id": p2_id,
+                "last_message": last_msg,
+                "last_message_text": last_msg.message,
+                "last_message_timestamp": last_msg.timestamp,
+                "unread_count_p1": unread_p1,
+                "unread_count_p2": unread_p2,
+            },
+        )
